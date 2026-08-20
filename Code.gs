@@ -169,7 +169,8 @@ function updateStock(menuSheet, items) {
     const updatedItems = [];
     
     // Actualizar stock para cada item
-    items.forEach(item => {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
       const rowIndex = rows.findIndex(row => row[idIndex] === item.id);
       if (rowIndex !== -1) {
         const currentStock = rows[rowIndex][stockIndex];
@@ -194,7 +195,7 @@ function updateStock(menuSheet, items) {
           quantityUsed: quantityNeeded
         });
       }
-    });
+    }
     
     return {
       success: true,
