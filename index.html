@@ -607,36 +607,34 @@
                 
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'cors',
+                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(orderData)
                 });
                 
-                console.log('Respuesta recibida, status:', response.status);
+                console.log('Respuesta recibida (no-cors mode)');
                 
-                const responseData = await response.json();
-                console.log('Datos de respuesta:', responseData);
+                // Redirect to WhatsApp
+                sendToWhatsApp(orderData);
                 
-                if (responseData.success) {
-                    // Redirect to WhatsApp
-                    sendToWhatsApp(orderData);
-                    
-                    // Clear cart and close modals
-                    cart = [];
-                    updateCartUI();
-                    closeCheckout();
-                    renderMenu();
-                    
-                    showToast('¡Pedido enviado con éxito!' + (responseData.stockUpdated ? ' Stock actualizado.' : ''));
-                } else {
-                    console.error('Error del servidor:', responseData.message);
-                    showToast('Error: ' + responseData.message);
-                }
+                // Clear cart and close modals
+                cart = [];
+                updateCartUI();
+                closeCheckout();
+                renderMenu();
+                
+                showToast('¡Pedido enviado con éxito!');
             } catch (error) {
                 console.error('Error sending order:', error);
-                showToast('Error al enviar el pedido: ' + error.message);
+                // Even if the API fails, redirect to WhatsApp
+                sendToWhatsApp(orderData);
+                cart = [];
+                updateCartUI();
+                closeCheckout();
+                renderMenu();
+                showToast('Pedido enviado (modo offline)');
             }
         });
 
