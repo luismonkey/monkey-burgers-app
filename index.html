@@ -602,34 +602,41 @@
             
             // Send order to Google Apps Script
             try {
+                console.log('Enviando pedido a:', SCRIPT_URL);
+                console.log('Datos del pedido:', orderData);
+                
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
+                    mode: 'cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(orderData)
                 });
                 
-                // Redirect to WhatsApp
-                sendToWhatsApp(orderData);
+                console.log('Respuesta recibida, status:', response.status);
                 
-                // Clear cart and close modals
-                cart = [];
-                updateCartUI();
-                closeCheckout();
-                renderMenu();
+                const responseData = await response.json();
+                console.log('Datos de respuesta:', responseData);
                 
-                showToast('¡Pedido enviado con éxito!');
+                if (responseData.success) {
+                    // Redirect to WhatsApp
+                    sendToWhatsApp(orderData);
+                    
+                    // Clear cart and close modals
+                    cart = [];
+                    updateCartUI();
+                    closeCheckout();
+                    renderMenu();
+                    
+                    showToast('¡Pedido enviado con éxito!' + (responseData.stockUpdated ? ' Stock actualizado.' : ''));
+                } else {
+                    console.error('Error del servidor:', responseData.message);
+                    showToast('Error: ' + responseData.message);
+                }
             } catch (error) {
                 console.error('Error sending order:', error);
-                // Even if the API fails, redirect to WhatsApp
-                sendToWhatsApp(orderData);
-                cart = [];
-                updateCartUI();
-                closeCheckout();
-                renderMenu();
-                showToast('Pedido enviado (modo offline)');
+                showToast('Error al enviar el pedido: ' + error.message);
             }
         });
 
