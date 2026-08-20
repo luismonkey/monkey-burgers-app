@@ -162,7 +162,7 @@ function updateStock(menuSheet, items) {
     
     Logger.log('idIndex: ' + idIndex + ', stockIndex: ' + stockIndex);
     
-    // Si la columna de stock no existe, no actualizar stock (compatibilidad con versiones anteriores)
+    // Si la columna de stock no existe, omitir control de stock
     if (stockIndex === -1) {
       Logger.log('Columna stock_actual no encontrada');
       return {
@@ -178,12 +178,15 @@ function updateStock(menuSheet, items) {
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       Logger.log('Procesando item: ' + JSON.stringify(item));
-      const rowIndex = rows.findIndex(row => row[idIndex] === item.id);
+      
+      // FIX 1: Comparar convirtiendo ambos valores a String para evitar descalces entre Number y String
+      const rowIndex = rows.findIndex(row => String(row[idIndex]) === String(item.id));
       Logger.log('rowIndex encontrado: ' + rowIndex);
       
       if (rowIndex !== -1) {
-        const currentStock = rows[rowIndex][stockIndex];
-        const quantityNeeded = item.cantidad;
+        // FIX 2: Convertir explícitamente a número para garantizar cálculos correctos
+        const currentStock = Number(rows[rowIndex][stockIndex]) || 0;
+        const quantityNeeded = Number(item.cantidad) || 0;
         
         Logger.log('Stock actual: ' + currentStock + ', Cantidad necesaria: ' + quantityNeeded);
         
@@ -198,9 +201,14 @@ function updateStock(menuSheet, items) {
         // Actualizar stock en la hoja
         const newStock = currentStock - quantityNeeded;
         Logger.log('Actualizando stock de ' + currentStock + ' a ' + newStock);
+        
+        // +2 porque data.slice(1) descarta headers (1) y las filas en Sheets son Base-1 (+1)
         menuSheet.getRange(rowIndex + 2, stockIndex + 1).setValue(newStock);
         Logger.log('Stock actualizado en la hoja');
         
+        // Actualizar la matriz local en memoria para evitar incongruencias si el mismo item viene duplicado en el array
+        rows[rowIndex][stockIndex] = newStock;
+
         updatedItems.push({
           id: item.id,
           nombre: item.nombre,
