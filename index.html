@@ -348,16 +348,30 @@
                 const cartItem = cart.find(c => c.id === item.id);
                 const quantity = cartItem ? cartItem.quantity : 0;
                 
+                // Verificar stock
+                const stockActual = item.stock_actual !== undefined ? item.stock_actual : 999;
+                const medallonesPorBurger = item.medallones_por_burger !== undefined ? item.medallones_por_burger : 0;
+                const maxQuantity = medallonesPorBurger > 0 ? Math.floor(stockActual / medallonesPorBurger) : 999;
+                const isOutOfStock = maxQuantity <= 0;
+                const isLowStock = maxQuantity > 0 && maxQuantity <= 5;
+                
                 const card = document.createElement('div');
-                card.className = 'bg-monkey-dark rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all';
+                card.className = `bg-monkey-dark rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all ${isOutOfStock ? 'opacity-50' : ''}`;
                 card.innerHTML = `
-                    <div class="bg-monkey-secondary/20 h-40 flex items-center justify-center">
+                    <div class="bg-monkey-secondary/20 h-40 flex items-center justify-center relative">
                         <span class="text-6xl">🍔</span>
+                        ${isOutOfStock ? '<div class="absolute inset-0 bg-black/70 flex items-center justify-center"><span class="text-white font-bold text-lg">AGOTADO</span></div>' : ''}
+                        ${isLowStock && !isOutOfStock ? '<div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">¡POCO STOCK!</div>' : ''}
                     </div>
                     <div class="p-4">
                         <span class="text-xs font-medium text-monkey-secondary bg-monkey-darker px-2 py-1 rounded-full">${item.categoria}</span>
                         <h3 class="font-bold text-lg mt-2">${item.nombre}</h3>
                         <p class="text-sm text-gray-400 mt-1">${item.descripcion}</p>
+                        ${medallonesPorBurger > 0 ? `
+                            <div class="mt-2 text-xs ${isLowStock ? 'text-red-400' : 'text-green-400'}">
+                                Stock: ${stockActual} medallones (Max: ${maxQuantity} ${maxQuantity === 1 ? 'unidad' : 'unidades'})
+                            </div>
+                        ` : ''}
                         <div class="flex items-center justify-between mt-4">
                             <span class="text-xl font-bold text-monkey-primary">$${item.precio_usd.toFixed(2)}</span>
                             <div class="flex items-center gap-2">
@@ -365,7 +379,7 @@
                                     <button onclick="updateQuantity(${item.id}, -1)" class="w-8 h-8 bg-monkey-darker hover:bg-monkey-secondary/30 rounded-full font-bold transition-all">-</button>
                                     <span class="w-8 text-center font-bold">${quantity}</span>
                                 ` : ''}
-                                <button onclick="updateQuantity(${item.id}, 1)" class="w-8 h-8 bg-monkey-primary hover:bg-orange-600 rounded-full font-bold transition-all">+</button>
+                                <button onclick="updateQuantity(${item.id}, 1)" class="w-8 h-8 bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker rounded-full font-bold transition-all ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''}" ${isOutOfStock ? 'disabled' : ''}>+</button>
                             </div>
                         </div>
                     </div>
@@ -379,12 +393,30 @@
             const item = menuData.find(i => i.id === id);
             const cartItem = cart.find(c => c.id === id);
             
+            // Verificar stock máximo disponible
+            const stockActual = item.stock_actual !== undefined ? item.stock_actual : 999;
+            const medallonesPorBurger = item.medallones_por_burger !== undefined ? item.medallones_por_burger : 0;
+            const maxQuantity = medallonesPorBurger > 0 ? Math.floor(stockActual / medallonesPorBurger) : 999;
+            
             if (cartItem) {
-                cartItem.quantity += change;
+                const newQuantity = cartItem.quantity + change;
+                
+                // Validar que no exceda el stock máximo
+                if (change > 0 && newQuantity > maxQuantity) {
+                    showToast(`Solo hay ${maxQuantity} ${maxQuantity === 1 ? 'unidad' : 'unidades'} disponibles de ${item.nombre}`);
+                    return;
+                }
+                
+                cartItem.quantity = newQuantity;
                 if (cartItem.quantity <= 0) {
                     cart = cart.filter(c => c.id !== id);
                 }
             } else if (change > 0) {
+                // Validar stock antes de agregar
+                if (maxQuantity <= 0) {
+                    showToast(`${item.nombre} está agotado`);
+                    return;
+                }
                 cart.push({ ...item, quantity: 1 });
             }
             

@@ -74,7 +74,7 @@ function getMenu() {
 }
 
 /**
- * saveOrder - Guarda un nuevo pedido en la pestaña Pedidos
+ * saveOrder - Guarda un nuevo pedido en la pestaña Pedidos y actualiza stock
  * @param {Object} orderData - Datos del pedido
  * @return {ContentService.TextOutput} - Respuesta JSON
  */
@@ -82,6 +82,16 @@ function saveOrder(orderData) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const ordersSheet = ss.getSheetByName('Pedidos');
+    const menuSheet = ss.getSheetByName('Menu');
+    
+    // Verificar y actualizar stock antes de guardar el pedido
+    const stockUpdateResult = updateStock(menuSheet, orderData.items);
+    if (!stockUpdateResult.success) {
+      return createJsonOutput({
+        success: false,
+        message: stockUpdateResult.message
+      });
+    }
     
     // Formatear items del pedido como texto
     const itemsText = orderData.items.map(item => 
@@ -120,13 +130,83 @@ function saveOrder(orderData) {
     
     return createJsonOutput({
       success: true,
-      message: 'Pedido guardado exitosamente'
+      message: 'Pedido guardado exitosamente',
+      stockUpdated: stockUpdateResult.updatedItems
     });
   } catch (error) {
     return createJsonOutput({
       success: false,
       message: 'Error al guardar el pedido: ' + error.toString()
     });
+  }
+}
+
+/**
+ * updateStock - Actualiza el stock de medallones después de un pedido
+ * @param {Sheet} menuSheet - Hoja de menú
+ * @param {Array} items - Items del pedido
+ * @return {Object} - Resultado de la actualización
+ */
+function updateStock(menuSheet, items) {
+  try {
+    const data = menuSheet.getDataRange().getValues();
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    // Encontrar índices de columnas
+    const idIndex = headers.indexOf('id');
+    const stockIndex = headers.indexOf('stock_actual');
+    const medallonesIndex = headers.indexOf('medallones_por_burger');
+    
+    // Si las columnas no existen, no actualizar stock (compatibilidad con versiones anteriores)
+    if (stockIndex === -1 || medallonesIndex === -1) {
+      return {
+        success: true,
+        updatedItems: [],
+        message: 'Columnas de stock no configuradas, pedido guardado sin control de stock'
+      };
+    }
+    
+    const updatedItems = [];
+    
+    // Actualizar stock para cada item
+    items.forEach(item => {
+      const rowIndex = rows.findIndex(row => row[idIndex] === item.id);
+      if (rowIndex !== -1) {
+        const currentStock = rows[rowIndex][stockIndex];
+        const medallonesPerBurger = rows[rowIndex][medallonesIndex];
+        const medallonesNeeded = item.cantidad * medallonesPerBurger;
+        
+        if (currentStock < medallonesNeeded) {
+          return {
+            success: false,
+            message: `Stock insuficiente para ${item.nombre}. Disponible: ${currentStock}, Necesario: ${medallonesNeeded}`
+          };
+        }
+        
+        // Actualizar stock en la hoja
+        const newStock = currentStock - medallonesNeeded;
+        menuSheet.getRange(rowIndex + 2, stockIndex + 1).setValue(newStock);
+        
+        updatedItems.push({
+          id: item.id,
+          nombre: item.nombre,
+          oldStock: currentStock,
+          newStock: newStock,
+          medallonesUsed: medallonesNeeded
+        });
+      }
+    });
+    
+    return {
+      success: true,
+      updatedItems: updatedItems
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Error al actualizar stock: ' + error.toString()
+    };
   }
 }
 
@@ -198,22 +278,22 @@ function createMenuSheet(ss) {
     Logger.log('Creando hoja Menu...');
     menuSheet = ss.insertSheet('Menu');
     
-    // Headers
-    const headers = [['id', 'categoria', 'nombre', 'descripcion', 'precio_usd', 'disponible']];
-    menuSheet.getRange(1, 1, 1, 6).setValues(headers);
+    // Headers con columnas de stock
+    const headers = [['id', 'categoria', 'nombre', 'descripcion', 'precio_usd', 'disponible', 'stock_actual', 'medallones_por_burger']];
+    menuSheet.getRange(1, 1, 1, 8).setValues(headers);
     
     // Datos de ejemplo en una sola operación
     const data = [
-      [1, 'Hamburguesas', 'Monkey Classic', 'Carne 150g, queso, lechuga, tomate', 8.00, true],
-      [2, 'Hamburguesas', 'Monkey Bacon', 'Carne 150g, bacon, queso, cebolla caramelizada', 10.00, true],
-      [3, 'Hamburguesas', 'Monkey Doble', 'Doble carne 150g, doble queso, vegetales', 12.00, true],
-      [4, 'Papas', 'Papas Fritas', 'Papas crujientes con salsa', 4.00, true],
-      [5, 'Papas', 'Papas con Queso', 'Papas con queso derretido y bacon', 6.00, true],
-      [6, 'Bebidas', 'Refresco', 'Coca-Cola, Pepsi, Sprite', 2.00, true],
-      [7, 'Bebidas', 'Jugo Natural', 'Naranja, limón, piña', 3.00, true]
+      [1, 'Hamburguesas', 'Monkey Classic', 'Carne 150g, queso, lechuga, tomate', 8.00, true, 20, 1],
+      [2, 'Hamburguesas', 'Monkey Bacon', 'Carne 150g, bacon, queso, cebolla caramelizada', 10.00, true, 15, 1],
+      [3, 'Hamburguesas', 'Monkey Doble', 'Doble carne 150g, doble queso, vegetales', 12.00, true, 10, 2],
+      [4, 'Papas', 'Papas Fritas', 'Papas crujientes con salsa', 4.00, true, 50, 0],
+      [5, 'Papas', 'Papas con Queso', 'Papas con queso derretido y bacon', 6.00, true, 30, 0],
+      [6, 'Bebidas', 'Refresco', 'Coca-Cola, Pepsi, Sprite', 2.00, true, 100, 0],
+      [7, 'Bebidas', 'Jugo Natural', 'Naranja, limón, piña', 3.00, true, 50, 0]
     ];
-    menuSheet.getRange(2, 1, data.length, 6).setValues(data);
-    Logger.log('Hoja Menu creada');
+    menuSheet.getRange(2, 1, data.length, 8).setValues(data);
+    Logger.log('Hoja Menu creada con columnas de stock');
   } else {
     Logger.log('Hoja Menu ya existe');
   }
