@@ -49,6 +49,10 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <img src="logo.jpeg" alt="Monkey Burgers Logo" class="h-12 w-auto object-contain">
+                    <div class="hidden sm:block">
+                        <h1 class="text-lg font-bold text-monkey-primary">Monkey Burgers</h1>
+                        <p class="text-xs text-gray-400">El sabor que te hace sonreír</p>
+                    </div>
                 </div>
                 <button onclick="openCart()" class="relative bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker px-4 py-2 rounded-full font-semibold transition-all">
                     <span>🛒</span>
@@ -682,5 +686,14 @@ ${itemsText}
             }, 3000);
         }
     </script>
+
+    <!-- Footer -->
+    <footer class="bg-monkey-dark border-t border-monkey-secondary/30 py-6 mt-auto">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-monkey-primary font-semibold text-lg mb-2">🍔 ¡Disfruta cada bocado! 🍔</p>
+            <p class="text-gray-400 text-sm">La mejor hamburguesa, hecha con amor y dedicación para ti.</p>
+            <p class="text-gray-500 text-xs mt-4">© 2024 Monkey Burgers. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 </body>
 </html>
