@@ -149,16 +149,22 @@ function saveOrder(orderData) {
  */
 function updateStock(menuSheet, items) {
   try {
+    Logger.log('Iniciando updateStock...');
     const data = menuSheet.getDataRange().getValues();
     const headers = data[0];
     const rows = data.slice(1);
+    
+    Logger.log('Headers: ' + headers.join(', '));
     
     // Encontrar índices de columnas
     const idIndex = headers.indexOf('id');
     const stockIndex = headers.indexOf('stock_actual');
     
+    Logger.log('idIndex: ' + idIndex + ', stockIndex: ' + stockIndex);
+    
     // Si la columna de stock no existe, no actualizar stock (compatibilidad con versiones anteriores)
     if (stockIndex === -1) {
+      Logger.log('Columna stock_actual no encontrada');
       return {
         success: true,
         updatedItems: [],
@@ -171,12 +177,18 @@ function updateStock(menuSheet, items) {
     // Actualizar stock para cada item
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
+      Logger.log('Procesando item: ' + JSON.stringify(item));
       const rowIndex = rows.findIndex(row => row[idIndex] === item.id);
+      Logger.log('rowIndex encontrado: ' + rowIndex);
+      
       if (rowIndex !== -1) {
         const currentStock = rows[rowIndex][stockIndex];
         const quantityNeeded = item.cantidad;
         
+        Logger.log('Stock actual: ' + currentStock + ', Cantidad necesaria: ' + quantityNeeded);
+        
         if (currentStock < quantityNeeded) {
+          Logger.log('Stock insuficiente');
           return {
             success: false,
             message: `Stock insuficiente para ${item.nombre}. Disponible: ${currentStock}, Necesario: ${quantityNeeded}`
@@ -185,7 +197,9 @@ function updateStock(menuSheet, items) {
         
         // Actualizar stock en la hoja
         const newStock = currentStock - quantityNeeded;
+        Logger.log('Actualizando stock de ' + currentStock + ' a ' + newStock);
         menuSheet.getRange(rowIndex + 2, stockIndex + 1).setValue(newStock);
+        Logger.log('Stock actualizado en la hoja');
         
         updatedItems.push({
           id: item.id,
@@ -194,14 +208,18 @@ function updateStock(menuSheet, items) {
           newStock: newStock,
           quantityUsed: quantityNeeded
         });
+      } else {
+        Logger.log('No se encontró fila para item id: ' + item.id);
       }
     }
     
+    Logger.log('updateStock completado exitosamente. Items actualizados: ' + updatedItems.length);
     return {
       success: true,
       updatedItems: updatedItems
     };
   } catch (error) {
+    Logger.log('Error en updateStock: ' + error.toString());
     return {
       success: false,
       message: 'Error al actualizar stock: ' + error.toString()
