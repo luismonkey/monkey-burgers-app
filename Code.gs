@@ -142,7 +142,7 @@ function saveOrder(orderData) {
 }
 
 /**
- * updateStock - Actualiza el stock de medallones después de un pedido
+ * updateStock - Actualiza el stock de unidades después de un pedido
  * @param {Sheet} menuSheet - Hoja de menú
  * @param {Array} items - Items del pedido
  * @return {Object} - Resultado de la actualización
@@ -156,14 +156,13 @@ function updateStock(menuSheet, items) {
     // Encontrar índices de columnas
     const idIndex = headers.indexOf('id');
     const stockIndex = headers.indexOf('stock_actual');
-    const medallonesIndex = headers.indexOf('medallones_por_burger');
     
-    // Si las columnas no existen, no actualizar stock (compatibilidad con versiones anteriores)
-    if (stockIndex === -1 || medallonesIndex === -1) {
+    // Si la columna de stock no existe, no actualizar stock (compatibilidad con versiones anteriores)
+    if (stockIndex === -1) {
       return {
         success: true,
         updatedItems: [],
-        message: 'Columnas de stock no configuradas, pedido guardado sin control de stock'
+        message: 'Columna de stock no configurada, pedido guardado sin control de stock'
       };
     }
     
@@ -174,18 +173,17 @@ function updateStock(menuSheet, items) {
       const rowIndex = rows.findIndex(row => row[idIndex] === item.id);
       if (rowIndex !== -1) {
         const currentStock = rows[rowIndex][stockIndex];
-        const medallonesPerBurger = rows[rowIndex][medallonesIndex];
-        const medallonesNeeded = item.cantidad * medallonesPerBurger;
+        const quantityNeeded = item.cantidad;
         
-        if (currentStock < medallonesNeeded) {
+        if (currentStock < quantityNeeded) {
           return {
             success: false,
-            message: `Stock insuficiente para ${item.nombre}. Disponible: ${currentStock}, Necesario: ${medallonesNeeded}`
+            message: `Stock insuficiente para ${item.nombre}. Disponible: ${currentStock}, Necesario: ${quantityNeeded}`
           };
         }
         
         // Actualizar stock en la hoja
-        const newStock = currentStock - medallonesNeeded;
+        const newStock = currentStock - quantityNeeded;
         menuSheet.getRange(rowIndex + 2, stockIndex + 1).setValue(newStock);
         
         updatedItems.push({
@@ -193,7 +191,7 @@ function updateStock(menuSheet, items) {
           nombre: item.nombre,
           oldStock: currentStock,
           newStock: newStock,
-          medallonesUsed: medallonesNeeded
+          quantityUsed: quantityNeeded
         });
       }
     });
@@ -278,22 +276,22 @@ function createMenuSheet(ss) {
     Logger.log('Creando hoja Menu...');
     menuSheet = ss.insertSheet('Menu');
     
-    // Headers con columnas de stock
-    const headers = [['id', 'categoria', 'nombre', 'descripcion', 'precio_usd', 'disponible', 'stock_actual', 'medallones_por_burger']];
-    menuSheet.getRange(1, 1, 1, 8).setValues(headers);
+    // Headers con columna de stock (simplificado)
+    const headers = [['id', 'categoria', 'nombre', 'descripcion', 'precio_usd', 'disponible', 'stock_actual']];
+    menuSheet.getRange(1, 1, 1, 7).setValues(headers);
     
     // Datos de ejemplo en una sola operación
     const data = [
-      [1, 'Hamburguesas', 'Monkey Classic', 'Carne 150g, queso, lechuga, tomate', 8.00, true, 20, 1],
-      [2, 'Hamburguesas', 'Monkey Bacon', 'Carne 150g, bacon, queso, cebolla caramelizada', 10.00, true, 15, 1],
-      [3, 'Hamburguesas', 'Monkey Doble', 'Doble carne 150g, doble queso, vegetales', 12.00, true, 10, 2],
-      [4, 'Papas', 'Papas Fritas', 'Papas crujientes con salsa', 4.00, true, 50, 0],
-      [5, 'Papas', 'Papas con Queso', 'Papas con queso derretido y bacon', 6.00, true, 30, 0],
-      [6, 'Bebidas', 'Refresco', 'Coca-Cola, Pepsi, Sprite', 2.00, true, 100, 0],
-      [7, 'Bebidas', 'Jugo Natural', 'Naranja, limón, piña', 3.00, true, 50, 0]
+      [1, 'Hamburguesas', 'Monkey Classic', 'Carne 150g, queso, lechuga, tomate', 8.00, true, 20],
+      [2, 'Hamburguesas', 'Monkey Bacon', 'Carne 150g, bacon, queso, cebolla caramelizada', 10.00, true, 15],
+      [3, 'Hamburguesas', 'Monkey Doble', 'Doble carne 150g, doble queso, vegetales', 12.00, true, 10],
+      [4, 'Papas', 'Papas Fritas', 'Papas crujientes con salsa', 4.00, true, 50],
+      [5, 'Papas', 'Papas con Queso', 'Papas con queso derretido y bacon', 6.00, true, 30],
+      [6, 'Bebidas', 'Refresco', 'Coca-Cola, Pepsi, Sprite', 2.00, true, 100],
+      [7, 'Bebidas', 'Jugo Natural', 'Naranja, limón, piña', 3.00, true, 50]
     ];
-    menuSheet.getRange(2, 1, data.length, 8).setValues(data);
-    Logger.log('Hoja Menu creada con columnas de stock');
+    menuSheet.getRange(2, 1, data.length, 7).setValues(data);
+    Logger.log('Hoja Menu creada con columna de stock');
   } else {
     Logger.log('Hoja Menu ya existe');
   }

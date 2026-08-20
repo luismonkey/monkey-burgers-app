@@ -348,12 +348,10 @@
                 const cartItem = cart.find(c => c.id === item.id);
                 const quantity = cartItem ? cartItem.quantity : 0;
                 
-                // Verificar stock
+                // Verificar stock (unidades directas)
                 const stockActual = item.stock_actual !== undefined ? item.stock_actual : 999;
-                const medallonesPorBurger = item.medallones_por_burger !== undefined ? item.medallones_por_burger : 0;
-                const maxQuantity = medallonesPorBurger > 0 ? Math.floor(stockActual / medallonesPorBurger) : 999;
-                const isOutOfStock = maxQuantity <= 0;
-                const isLowStock = maxQuantity > 0 && maxQuantity <= 5;
+                const isOutOfStock = stockActual <= 0;
+                const isLowStock = stockActual > 0 && stockActual <= 5;
                 
                 const card = document.createElement('div');
                 card.className = `bg-monkey-dark rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all ${isOutOfStock ? 'opacity-50' : ''}`;
@@ -367,9 +365,9 @@
                         <span class="text-xs font-medium text-monkey-secondary bg-monkey-darker px-2 py-1 rounded-full">${item.categoria}</span>
                         <h3 class="font-bold text-lg mt-2">${item.nombre}</h3>
                         <p class="text-sm text-gray-400 mt-1">${item.descripcion}</p>
-                        ${medallonesPorBurger > 0 ? `
+                        ${stockActual !== undefined && stockActual !== 999 ? `
                             <div class="mt-2 text-xs ${isLowStock ? 'text-red-400' : 'text-green-400'}">
-                                Stock: ${stockActual} medallones (Max: ${maxQuantity} ${maxQuantity === 1 ? 'unidad' : 'unidades'})
+                                Stock: ${stockActual} ${stockActual === 1 ? 'unidad' : 'unidades'}
                             </div>
                         ` : ''}
                         <div class="flex items-center justify-between mt-4">
@@ -393,17 +391,15 @@
             const item = menuData.find(i => i.id === id);
             const cartItem = cart.find(c => c.id === id);
             
-            // Verificar stock máximo disponible
+            // Verificar stock máximo disponible (unidades directas)
             const stockActual = item.stock_actual !== undefined ? item.stock_actual : 999;
-            const medallonesPorBurger = item.medallones_por_burger !== undefined ? item.medallones_por_burger : 0;
-            const maxQuantity = medallonesPorBurger > 0 ? Math.floor(stockActual / medallonesPorBurger) : 999;
             
             if (cartItem) {
                 const newQuantity = cartItem.quantity + change;
                 
                 // Validar que no exceda el stock máximo
-                if (change > 0 && newQuantity > maxQuantity) {
-                    showToast(`Solo hay ${maxQuantity} ${maxQuantity === 1 ? 'unidad' : 'unidades'} disponibles de ${item.nombre}`);
+                if (change > 0 && newQuantity > stockActual) {
+                    showToast(`Solo hay ${stockActual} ${stockActual === 1 ? 'unidad' : 'unidades'} disponibles de ${item.nombre}`);
                     return;
                 }
                 
@@ -413,7 +409,7 @@
                 }
             } else if (change > 0) {
                 // Validar stock antes de agregar
-                if (maxQuantity <= 0) {
+                if (stockActual <= 0) {
                     showToast(`${item.nombre} está agotado`);
                     return;
                 }

@@ -17,16 +17,15 @@ Web App liviana, costo $0, tipo Mobile-First para el negocio de hamburguesas "Mo
 3. El script `Code.gs` creará automáticamente las pestañas necesarias, pero puedes crearlas manualmente:
 
 #### Pestaña "Menu"
-| id | categoria | nombre | descripcion | precio_usd | disponible | stock_actual | medallones_por_burger |
-|----|-----------|--------|-------------|------------|------------|--------------|---------------------|
-| 1 | Hamburguesas | Monkey Classic | Carne 150g, queso, lechuga, tomate | 8.00 | TRUE | 20 | 1 |
-| 2 | Hamburguesas | Monkey Bacon | Carne 150g, bacon, queso, cebolla caramelizada | 10.00 | TRUE | 15 | 1 |
-| 3 | Hamburguesas | Monkey Doble | Doble carne 150g, doble queso, vegetales | 12.00 | TRUE | 10 | 2 |
-| 4 | Papas | Papas Fritas | Papas crujientes con salsa | 4.00 | TRUE | 50 | 0 |
+| id | categoria | nombre | descripcion | precio_usd | disponible | stock_actual |
+|----|-----------|--------|-------------|------------|------------|--------------|
+| 1 | Hamburguesas | Monkey Classic | Carne 150g, queso, lechuga, tomate | 8.00 | TRUE | 20 |
+| 2 | Hamburguesas | Monkey Bacon | Carne 150g, bacon, queso, cebolla caramelizada | 10.00 | TRUE | 15 |
+| 3 | Hamburguesas | Monkey Doble | Doble carne 150g, doble queso, vegetales | 12.00 | TRUE | 10 |
+| 4 | Papas | Papas Fritas | Papas crujientes con salsa | 4.00 | TRUE | 50 |
 
-**Nuevas columnas de control de stock:**
-- `stock_actual`: Cantidad de medallones de carne disponibles
-- `medallones_por_burger`: Cuántos medallones usa cada hamburguesa (0 para productos sin carne)
+**Columna de control de stock:**
+- `stock_actual`: Cantidad de unidades disponibles de cada producto (hamburguesas, raciones de papas, bebidas, etc.)
 
 #### Pestaña "MetodosPago"
 | id | tipo | banco | cedula_rif | telefono | titular | activo |
@@ -142,8 +141,7 @@ tailwind.config = {
 En Google Sheets, agrega filas a la pestaña "Menu":
 - `disponible = TRUE` para mostrar el producto
 - `disponible = FALSE` para ocultarlo temporalmente
-- `stock_actual`: Cantidad de medallones disponibles
-- `medallones_por_burger`: Cuántos medallones usa cada producto (0 para productos sin carne)
+- `stock_actual`: Cantidad de unidades disponibles del producto
 
 ### Configurar métodos de pago adicionales
 
@@ -151,13 +149,12 @@ En la pestaña "MetodosPago", agrega más filas con diferentes cuentas bancarias
 
 ## 📊 Control de Stock
 
-El sistema incluye control automático de inventario basado en medallones de carne.
+El sistema incluye control automático de inventario basado en unidades disponibles.
 
 ### Cómo funciona:
 
 1. **Configuración inicial**: En la pestaña "Menu", configura:
-   - `stock_actual`: Cantidad de medallones de carne disponibles
-   - `medallones_por_burger`: Cuántos medallones usa cada hamburguesa (0 para papas/bebidas)
+   - `stock_actual`: Cantidad de unidades disponibles de cada producto (hamburguesas, raciones de papas, bebidas, etc.)
 
 2. **Validación en el frontend**:
    - Los productos muestran el stock disponible
@@ -166,22 +163,23 @@ El sistema incluye control automático de inventario basado en medallones de car
    - El sistema impide agregar más productos de los que hay en stock
 
 3. **Actualización automática**:
-   - Al confirmar un pedido, el sistema resta automáticamente los medallones usados
+   - Al confirmar un pedido, el sistema resta automáticamente las unidades compradas
    - Si no hay suficiente stock, el pedido es rechazado con mensaje de error
    - El stock se actualiza en tiempo real en Google Sheets
 
 ### Ejemplo de configuración:
 
-| Producto | Medallones por burger | Stock inicial | Max unidades |
-|----------|---------------------|--------------|--------------|
-| Monkey Classic | 1 | 20 | 20 |
-| Monkey Bacon | 1 | 15 | 15 |
-| Monkey Doble | 2 | 10 | 5 |
-| Papas Fritas | 0 | 50 | ∞ |
+| Producto | Stock inicial | Descripción |
+|----------|--------------|-------------|
+| Monkey Classic | 20 | 20 hamburguesas simples preparadas |
+| Monkey Bacon | 15 | 15 hamburguesas con bacon preparadas |
+| Monkey Doble | 10 | 10 hamburguesas dobles preparadas |
+| Papas Fritas | 50 | 50 raciones de papas preparadas |
+| Refresco | 100 | 100 bebidas disponibles |
 
 ### Reponer stock:
 
-Simplemente actualiza el valor de `stock_actual` en Google Sheets. El frontend reflejará los cambios automáticamente al recargar la página.
+Simplemente actualiza el valor de `stock_actual` en Google Sheets. El frontend reflejará los cambios automáticamente al recargar la página. Tú controlas cuántas unidades de cada producto preparas basándote en los medallones de carne que tengas.
 
 ## 🔧 Solución de Problemas
 
