@@ -11,11 +11,12 @@
                 extend: {
                     colors: {
                         monkey: {
-                            primary: '#FF6B35',
-                            secondary: '#F7C59F',
-                            dark: '#2D2D2D',
-                            darker: '#1A1A1A',
-                            accent: '#4ECDC4'
+                            primary: '#FFB800',      // Amarillo mostaza (del logo)
+                            secondary: '#FF8C00',    // Naranja oscuro
+                            dark: '#1A1A1A',         // Negro casi puro
+                            darker: '#000000',       // Negro puro
+                            accent: '#FFFFFF',       // Blanco
+                            light: '#F5F5F5'         // Gris muy claro
                         }
                     }
                 }
@@ -44,13 +45,12 @@
 <body class="bg-monkey-darker text-white min-h-screen">
     <!-- Header -->
     <header class="bg-monkey-dark shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
+        <div class="container mx-auto px-4 py-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <span class="text-3xl">🍔</span>
-                    <h1 class="text-2xl font-bold text-monkey-primary">Monkey Burgers</h1>
+                    <img src="logo.jpeg" alt="Monkey Burgers Logo" class="h-12 w-auto object-contain">
                 </div>
-                <button onclick="openCart()" class="relative bg-monkey-primary hover:bg-orange-600 text-white px-4 py-2 rounded-full font-semibold transition-all">
+                <button onclick="openCart()" class="relative bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker px-4 py-2 rounded-full font-semibold transition-all">
                     <span>🛒</span>
                     <span id="cart-count" class="absolute -top-2 -right-2 bg-monkey-accent text-monkey-darker text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">0</span>
                 </button>
@@ -99,7 +99,7 @@
                     <span class="text-lg font-semibold">Total:</span>
                     <span id="cart-total" class="text-2xl font-bold text-monkey-primary">$0.00</span>
                 </div>
-                <button onclick="openCheckout()" id="checkout-btn" class="w-full bg-monkey-accent hover:bg-teal-400 text-monkey-darker font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                <button onclick="openCheckout()" id="checkout-btn" class="w-full bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                     Ver Pedido / Confirmar
                 </button>
             </div>
@@ -112,15 +112,15 @@
             <div class="bg-monkey-dark w-full max-w-lg rounded-2xl overflow-hidden">
                 <!-- Checkout Header -->
                 <div class="bg-monkey-primary p-4 flex items-center justify-between">
-                    <h2 class="text-xl font-bold">📋 Finalizar Pedido</h2>
-                    <button onclick="closeCheckout()" class="text-white text-2xl hover:opacity-80">&times;</button>
+                    <h2 class="text-xl font-bold text-monkey-darker">📋 Finalizar Pedido</h2>
+                    <button onclick="closeCheckout()" class="text-monkey-darker text-2xl hover:opacity-80">&times;</button>
                 </div>
 
                 <!-- Checkout Form -->
                 <form id="checkout-form" class="p-6 space-y-5">
                     <!-- Customer Info -->
                     <div class="space-y-4">
-                        <h3 class="font-semibold text-monkey-secondary">👤 Datos del Cliente</h3>
+                        <h3 class="font-semibold text-monkey-primary">👤 Datos del Cliente</h3>
                         <div>
                             <label class="block text-sm font-medium mb-1">Nombre y Apellido *</label>
                             <input type="text" id="customer-name" required class="w-full bg-monkey-darker border border-monkey-secondary/30 rounded-lg px-4 py-2 focus:outline-none focus:border-monkey-primary transition-all">
@@ -133,25 +133,25 @@
 
                     <!-- Order Type -->
                     <div class="space-y-4">
-                        <h3 class="font-semibold text-monkey-secondary">📍 Tipo de Pedido</h3>
+                        <h3 class="font-semibold text-monkey-primary">📍 Tipo de Pedido</h3>
                         <div class="grid grid-cols-3 gap-2">
                             <label class="cursor-pointer">
                                 <input type="radio" name="order-type" value="mesa" class="hidden peer" onchange="handleOrderTypeChange()">
-                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
+                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
                                     <span class="text-2xl">🪑</span>
                                     <p class="text-sm font-medium mt-1">Mesa</p>
                                 </div>
                             </label>
                             <label class="cursor-pointer">
                                 <input type="radio" name="order-type" value="llevar" class="hidden peer" onchange="handleOrderTypeChange()">
-                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
+                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
                                     <span class="text-2xl">🥡</span>
                                     <p class="text-sm font-medium mt-1">Para Llevar</p>
                                 </div>
                             </label>
                             <label class="cursor-pointer">
                                 <input type="radio" name="order-type" value="delivery" class="hidden peer" onchange="handleOrderTypeChange()">
-                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
+                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
                                     <span class="text-2xl">🏠</span>
                                     <p class="text-sm font-medium mt-1">Delivery</p>
                                 </div>
@@ -183,18 +183,18 @@
 
                     <!-- Payment Method -->
                     <div class="space-y-4">
-                        <h3 class="font-semibold text-monkey-secondary">💳 Método de Pago</h3>
+                        <h3 class="font-semibold text-monkey-primary">💳 Método de Pago</h3>
                         <div class="grid grid-cols-2 gap-2">
                             <label class="cursor-pointer">
                                 <input type="radio" name="payment-method" value="efectivo" class="hidden peer" onchange="handlePaymentMethodChange()">
-                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
+                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
                                     <span class="text-2xl">💵</span>
                                     <p class="text-sm font-medium mt-1">Efectivo</p>
                                 </div>
                             </label>
                             <label class="cursor-pointer">
                                 <input type="radio" name="payment-method" value="pago-movil" class="hidden peer" onchange="handlePaymentMethodChange()">
-                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
+                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
                                     <span class="text-2xl">📱</span>
                                     <p class="text-sm font-medium mt-1">Pago Móvil</p>
                                 </div>
@@ -222,7 +222,7 @@
                     </div>
 
                     <!-- Submit Button -->
-                    <button type="submit" class="w-full bg-monkey-accent hover:bg-teal-400 text-monkey-darker font-bold py-3 rounded-lg transition-all">
+                    <button type="submit" class="w-full bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker font-bold py-3 rounded-lg transition-all">
                         🚀 Enviar Pedido
                     </button>
                 </form>
@@ -231,7 +231,7 @@
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-4 left-4 right-4 bg-monkey-accent text-monkey-darker font-semibold px-4 py-3 rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all z-50">
+    <div id="toast" class="fixed bottom-4 left-4 right-4 bg-monkey-primary text-monkey-darker font-semibold px-4 py-3 rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all z-50">
         <span id="toast-message"></span>
     </div>
 
