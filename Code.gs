@@ -11,6 +11,7 @@
 const MENU_SHEET_NAME = 'Menu';
 const ORDERS_SHEET_NAME = 'Pedidos';
 const PAYMENT_SHEET_NAME = 'MetodosPago';
+const LOG_SHEET_NAME = 'Logs';
 
 
 // ============================================================
@@ -57,27 +58,35 @@ function doGet(e) {
 function doPost(e) {
   try {
 
+    logToSheet('========== NUEVO PEDIDO ==========');
     Logger.log('========== NUEVO PEDIDO ==========');
 
     if (!e || !e.postData || !e.postData.contents) {
+      logToSheet('ERROR: No se recibió información del pedido');
       return createJsonOutput({
         success: false,
         message: 'No se recibió información del pedido'
       });
     }
 
+    logToSheet('Contenido recibido: ' + e.postData.contents);
     Logger.log('Contenido recibido:');
     Logger.log(e.postData.contents);
 
     const orderData = JSON.parse(e.postData.contents);
 
+    logToSheet('Pedido parseado: ' + JSON.stringify(orderData));
     Logger.log('Pedido parseado:');
     Logger.log(JSON.stringify(orderData));
 
-    return saveOrder(orderData);
+    const result = saveOrder(orderData);
+
+    logToSheet('Resultado saveOrder: ' + JSON.stringify(result));
+    return result;
 
   } catch (error) {
 
+    logToSheet('ERROR en doPost: ' + error.toString());
     Logger.log('ERROR en doPost: ' + error.toString());
 
     return createJsonOutput({
@@ -159,20 +168,7 @@ function getMenu() {
 
 function saveOrder(orderData) {
 
-  // ----------------------------------------------------------
-  // BLOQUEO
-  // Evita que dos pedidos modifiquen el stock al mismo tiempo
-  // ----------------------------------------------------------
-
-  const lock = LockService.getScriptLock();
-
   try {
-
-    // Esperar máximo 30 segundos
-    lock.waitLock(30000);
-
-    Logger.log('Lock obtenido correctamente');
-
 
     // --------------------------------------------------------
     // VALIDAR DATOS DEL PEDIDO
@@ -213,12 +209,15 @@ function saveOrder(orderData) {
     // ACTUALIZAR STOCK
     // --------------------------------------------------------
 
+    logToSheet('Iniciando actualización de stock...');
     Logger.log('Iniciando actualización de stock...');
 
     const stockUpdateResult = updateStock(
       menuSheet,
       orderData.items
     );
+
+    logToSheet('Resultado updateStock: ' + JSON.stringify(stockUpdateResult));
 
 
     // Si el stock no se pudo actualizar,
@@ -368,6 +367,12 @@ function saveOrder(orderData) {
       JSON.stringify(stockUpdateResult.updatedItems)
     );
 
+    // Agregar debug en columna Estado para ver resultado de updateStock
+    const lastRow = ordersSheet.getLastRow();
+    ordersSheet.getRange(lastRow, 9).setValue(
+      'DEBUG: ' + JSON.stringify(stockUpdateResult)
+    );
+
 
     // --------------------------------------------------------
     // RESPUESTA
@@ -434,6 +439,7 @@ function updateStock(menuSheet, items) {
 
   try {
 
+    logToSheet('========== UPDATE STOCK ==========');
     Logger.log('========== UPDATE STOCK ==========');
 
 
@@ -446,6 +452,7 @@ function updateStock(menuSheet, items) {
 
     if (data.length < 2) {
 
+      logToSheet('ERROR: La hoja Menu no contiene productos');
       return {
 
         success: false,
@@ -462,6 +469,8 @@ function updateStock(menuSheet, items) {
 
     const rows = data.slice(1);
 
+    logToSheet('Headers: ' + headers.join(', '));
+
 
     // --------------------------------------------------------
     // BUSCAR COLUMNAS
@@ -474,6 +483,7 @@ function updateStock(menuSheet, items) {
       headers.indexOf('stock_actual');
 
 
+    logToSheet('idIndex = ' + idIndex + ', stockIndex = ' + stockIndex);
     Logger.log(
       'idIndex = ' +
       idIndex +
@@ -488,6 +498,7 @@ function updateStock(menuSheet, items) {
 
     if (idIndex === -1) {
 
+      logToSheet('ERROR: No existe la columna "id" en la hoja Menu');
       return {
 
         success: false,
@@ -503,6 +514,7 @@ function updateStock(menuSheet, items) {
 
     if (stockIndex === -1) {
 
+      logToSheet('ERROR: No existe la columna "stock_actual" en la hoja Menu');
       return {
 
         success: false,
@@ -528,7 +540,7 @@ function updateStock(menuSheet, items) {
 
       const item = items[i];
 
-
+      logToSheet('Procesando item: ' + JSON.stringify(item));
       Logger.log(
         'Procesando item: ' +
         JSON.stringify(item)
@@ -602,6 +614,7 @@ function updateStock(menuSheet, items) {
         );
 
 
+      logToSheet('ID buscado: ' + item.id + ' | rowIndex: ' + rowIndex);
       Logger.log(
         'ID buscado: ' +
         item.id +
@@ -616,6 +629,7 @@ function updateStock(menuSheet, items) {
 
       if (rowIndex === -1) {
 
+        logToSheet('ERROR: No se encontró el producto "' + (item.nombre || '') + '" con ID "' + item.id + '" en la hoja Menu');
         return {
 
           success: false,
@@ -641,6 +655,7 @@ function updateStock(menuSheet, items) {
         Number(rows[rowIndex][stockIndex]) || 0;
 
 
+      logToSheet('Producto: ' + item.nombre + ' | Stock: ' + currentStock + ' | Necesario: ' + quantityNeeded);
       Logger.log(
         'Producto: ' +
         item.nombre +
@@ -657,6 +672,7 @@ function updateStock(menuSheet, items) {
 
       if (currentStock < quantityNeeded) {
 
+        logToSheet('ERROR: Stock insuficiente para "' + item.nombre + '". Disponible: ' + currentStock + ', Necesario: ' + quantityNeeded);
         return {
 
           success: false,
@@ -682,6 +698,8 @@ function updateStock(menuSheet, items) {
       const newStock =
         currentStock - quantityNeeded;
 
+
+      logToSheet('Calculando nuevo stock para ' + item.nombre + ': ' + currentStock + ' - ' + quantityNeeded + ' = ' + newStock);
 
       itemsToUpdate.push({
 
@@ -727,6 +745,7 @@ function updateStock(menuSheet, items) {
       );
 
 
+      logToSheet('Stock actualizado en hoja: ' + update.nombre + ' | ' + update.oldStock + ' -> ' + update.newStock);
       Logger.log(
         'Stock actualizado: ' +
         update.nombre +
@@ -1199,5 +1218,30 @@ function createOrdersSheet(ss) {
     Logger.log(
       'Hoja Pedidos ya existe'
     );
+  }
+}
+
+
+// ============================================================
+// LOGGING A HOJA
+// ============================================================
+
+function logToSheet(message) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let logSheet = ss.getSheetByName(LOG_SHEET_NAME);
+
+    if (!logSheet) {
+      logSheet = ss.insertSheet(LOG_SHEET_NAME);
+      logSheet.getRange(1, 1).setValue('Timestamp');
+      logSheet.getRange(1, 2).setValue('Mensaje');
+      logSheet.getRange(1, 1, 1, 2).setFontWeight('bold');
+    }
+
+    const timestamp = new Date();
+    logSheet.appendRow([timestamp, message]);
+
+  } catch (error) {
+    Logger.log('Error en logToSheet: ' + error.toString());
   }
 }
