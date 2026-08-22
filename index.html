@@ -1,699 +1,2307 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
     <title>Monkey Burgers - Pedidos Online</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <script>
+
         tailwind.config = {
+
             theme: {
+
                 extend: {
+
                     colors: {
+
                         monkey: {
-                            primary: '#FFB800',      // Amarillo mostaza (del logo)
-                            secondary: '#FF8C00',    // Naranja oscuro
-                            dark: '#1A1A1A',         // Negro casi puro
-                            darker: '#000000',       // Negro puro
-                            accent: '#FFFFFF',       // Blanco
-                            light: '#F5F5F5'         // Gris muy claro
+
+                            primary: '#FFB800',
+
+                            secondary: '#FF8C00',
+
+                            dark: '#1A1A1A',
+
+                            darker: '#000000',
+
+                            accent: '#FFFFFF',
+
+                            light: '#F5F5F5'
+
                         }
+
                     }
+
                 }
+
             }
+
         }
+
     </script>
+
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+        @import url(
+            'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap'
+        );
+
+
         body {
+
             font-family: 'Poppins', sans-serif;
+
         }
+
+
         .loader {
+
             border: 4px solid #f3f3f3;
+
             border-top: 4px solid #FF6B35;
+
             border-radius: 50%;
+
             width: 40px;
+
             height: 40px;
+
             animation: spin 1s linear infinite;
+
         }
+
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+
         }
+
     </style>
+
 </head>
+
+
 <body class="bg-monkey-darker text-white min-h-screen">
-    <!-- Header -->
-    <header class="bg-monkey-dark shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <img src="logo.jpeg" alt="Monkey Burgers Logo" class="h-12 w-auto object-contain">
-                    <div class="hidden sm:block">
-                        <h1 class="text-lg font-bold text-monkey-primary">Monkey Burgers</h1>
-                        <p class="text-xs text-gray-400">El sabor que te hace sonreír</p>
-                    </div>
+
+
+<!-- ============================================================
+     HEADER
+============================================================ -->
+
+<header class="bg-monkey-dark shadow-lg sticky top-0 z-50">
+
+    <div class="container mx-auto px-4 py-3">
+
+        <div class="flex items-center justify-between">
+
+            <div class="flex items-center gap-3">
+
+                <img
+                    src="logo.jpeg"
+                    alt="Monkey Burgers Logo"
+                    class="h-12 w-auto object-contain"
+                >
+
+                <div class="hidden sm:block">
+
+                    <h1 class="text-lg font-bold text-monkey-primary">
+                        Monkey Burgers
+                    </h1>
+
+                    <p class="text-xs text-gray-400">
+                        El sabor que te hace sonreír
+                    </p>
+
                 </div>
-                <button onclick="openCart()" class="relative bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker px-4 py-2 rounded-full font-semibold transition-all">
-                    <span>🛒</span>
-                    <span id="cart-count" class="absolute -top-2 -right-2 bg-monkey-accent text-monkey-darker text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">0</span>
-                </button>
+
             </div>
-        </div>
-    </header>
 
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="fixed inset-0 bg-monkey-darker flex flex-col items-center justify-center z-50">
-        <div class="loader mb-4"></div>
-        <p class="text-monkey-primary font-semibold">Cargando menú...</p>
-    </div>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-6 pb-24">
-        <!-- Category Filter -->
-        <div id="category-filter" class="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
-            <button onclick="filterByCategory('all')" class="category-btn active bg-monkey-primary text-white px-4 py-2 rounded-full font-medium whitespace-nowrap transition-all" data-category="all">
-                Todos
+            <button
+                onclick="openCart()"
+                class="relative bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker px-4 py-2 rounded-full font-semibold transition-all"
+            >
+
+                <span>🛒</span>
+
+                <span
+                    id="cart-count"
+                    class="absolute -top-2 -right-2 bg-monkey-accent text-monkey-darker text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center"
+                >
+                    0
+                </span>
+
             </button>
+
         </div>
 
-        <!-- Menu Grid -->
-        <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- Products will be loaded here -->
+    </div>
+
+</header>
+
+
+<!-- ============================================================
+     LOADING
+============================================================ -->
+
+<div
+    id="loading-screen"
+    class="fixed inset-0 bg-monkey-darker flex flex-col items-center justify-center z-50"
+>
+
+    <div class="loader mb-4"></div>
+
+    <p class="text-monkey-primary font-semibold">
+        Cargando menú...
+    </p>
+
+</div>
+
+
+<!-- ============================================================
+     MAIN
+============================================================ -->
+
+<main class="container mx-auto px-4 py-6 pb-24">
+
+
+    <div
+        id="category-filter"
+        class="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide"
+    >
+
+        <button
+            onclick="filterByCategory('all')"
+            class="category-btn active bg-monkey-primary text-white px-4 py-2 rounded-full font-medium whitespace-nowrap transition-all"
+            data-category="all"
+        >
+            Todos
+        </button>
+
+    </div>
+
+
+    <div
+        id="menu-grid"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+    >
+
+    </div>
+
+</main>
+
+
+<!-- ============================================================
+     CART MODAL
+============================================================ -->
+
+<div
+    id="cart-modal"
+    class="fixed inset-0 bg-black/80 z-50 hidden"
+>
+
+    <div
+        class="bg-monkey-dark h-full flex flex-col max-w-lg mx-auto"
+    >
+
+        <div
+            class="bg-monkey-primary p-4 flex items-center justify-between"
+        >
+
+            <h2 class="text-xl font-bold">
+                🛒 Tu Pedido
+            </h2>
+
+            <button
+                onclick="closeCart()"
+                class="text-white text-2xl hover:opacity-80"
+            >
+                &times;
+            </button>
+
         </div>
-    </main>
 
-    <!-- Cart Modal -->
-    <div id="cart-modal" class="fixed inset-0 bg-black/80 z-50 hidden">
-        <div class="bg-monkey-dark h-full flex flex-col max-w-lg mx-auto">
-            <!-- Cart Header -->
-            <div class="bg-monkey-primary p-4 flex items-center justify-between">
-                <h2 class="text-xl font-bold">🛒 Tu Pedido</h2>
-                <button onclick="closeCart()" class="text-white text-2xl hover:opacity-80">&times;</button>
+
+        <div
+            id="cart-items"
+            class="flex-1 overflow-y-auto p-4 space-y-3"
+        >
+        </div>
+
+
+        <div
+            class="bg-monkey-darker p-4 border-t border-monkey-secondary/20"
+        >
+
+            <div
+                class="flex justify-between items-center mb-4"
+            >
+
+                <span class="text-lg font-semibold">
+                    Total:
+                </span>
+
+                <span
+                    id="cart-total"
+                    class="text-2xl font-bold text-monkey-primary"
+                >
+                    $0.00
+                </span>
+
             </div>
 
-            <!-- Cart Items -->
-            <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3">
-                <!-- Cart items will be loaded here -->
-            </div>
 
-            <!-- Cart Footer -->
-            <div class="bg-monkey-darker p-4 border-t border-monkey-secondary/20">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-lg font-semibold">Total:</span>
-                    <span id="cart-total" class="text-2xl font-bold text-monkey-primary">$0.00</span>
-                </div>
-                <button onclick="openCheckout()" id="checkout-btn" class="w-full bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                    Ver Pedido / Confirmar
+            <button
+                onclick="openCheckout()"
+                id="checkout-btn"
+                class="w-full bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker font-bold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                Ver Pedido / Confirmar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     CHECKOUT
+============================================================ -->
+
+<div
+    id="checkout-modal"
+    class="fixed inset-0 bg-black/80 z-50 hidden overflow-y-auto"
+>
+
+    <div
+        class="min-h-screen flex items-start justify-center p-4 py-8"
+    >
+
+        <div
+            class="bg-monkey-dark w-full max-w-lg rounded-2xl overflow-hidden"
+        >
+
+
+            <div
+                class="bg-monkey-primary p-4 flex items-center justify-between"
+            >
+
+                <h2
+                    class="text-xl font-bold text-monkey-darker"
+                >
+                    📋 Finalizar Pedido
+                </h2>
+
+                <button
+                    onclick="closeCheckout()"
+                    class="text-monkey-darker text-2xl hover:opacity-80"
+                >
+                    &times;
                 </button>
-            </div>
-        </div>
-    </div>
 
-    <!-- Checkout Modal -->
-    <div id="checkout-modal" class="fixed inset-0 bg-black/80 z-50 hidden overflow-y-auto">
-        <div class="min-h-screen flex items-start justify-center p-4 py-8">
-            <div class="bg-monkey-dark w-full max-w-lg rounded-2xl overflow-hidden">
-                <!-- Checkout Header -->
-                <div class="bg-monkey-primary p-4 flex items-center justify-between">
-                    <h2 class="text-xl font-bold text-monkey-darker">📋 Finalizar Pedido</h2>
-                    <button onclick="closeCheckout()" class="text-monkey-darker text-2xl hover:opacity-80">&times;</button>
+            </div>
+
+
+            <form
+                id="checkout-form"
+                class="p-6 space-y-5"
+            >
+
+
+                <!-- CLIENTE -->
+
+                <div class="space-y-4">
+
+                    <h3 class="font-semibold text-monkey-primary">
+                        👤 Datos del Cliente
+                    </h3>
+
+
+                    <div>
+
+                        <label class="block text-sm font-medium mb-1">
+                            Nombre y Apellido *
+                        </label>
+
+                        <input
+                            type="text"
+                            id="customer-name"
+                            required
+                            class="w-full bg-monkey-darker border border-monkey-secondary/30 rounded-lg px-4 py-2 focus:outline-none focus:border-monkey-primary transition-all"
+                        >
+
+                    </div>
+
+
+                    <div>
+
+                        <label class="block text-sm font-medium mb-1">
+                            Teléfono de Contacto *
+                        </label>
+
+                        <input
+                            type="tel"
+                            id="customer-phone"
+                            required
+                            class="w-full bg-monkey-darker border border-monkey-secondary/30 rounded-lg px-4 py-2 focus:outline-none focus:border-monkey-primary transition-all"
+                        >
+
+                    </div>
+
                 </div>
 
-                <!-- Checkout Form -->
-                <form id="checkout-form" class="p-6 space-y-5">
-                    <!-- Customer Info -->
-                    <div class="space-y-4">
-                        <h3 class="font-semibold text-monkey-primary">👤 Datos del Cliente</h3>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Nombre y Apellido *</label>
-                            <input type="text" id="customer-name" required class="w-full bg-monkey-darker border border-monkey-secondary/30 rounded-lg px-4 py-2 focus:outline-none focus:border-monkey-primary transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Teléfono de Contacto *</label>
-                            <input type="tel" id="customer-phone" required class="w-full bg-monkey-darker border border-monkey-secondary/30 rounded-lg px-4 py-2 focus:outline-none focus:border-monkey-primary transition-all">
-                        </div>
-                    </div>
 
-                    <!-- Order Type -->
-                    <div class="space-y-4">
-                        <h3 class="font-semibold text-monkey-primary">📍 Tipo de Pedido</h3>
-                        <div class="grid grid-cols-3 gap-2">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="order-type" value="mesa" class="hidden peer" onchange="handleOrderTypeChange()">
-                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
-                                    <span class="text-2xl">🪑</span>
-                                    <p class="text-sm font-medium mt-1">Mesa</p>
-                                </div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="order-type" value="llevar" class="hidden peer" onchange="handleOrderTypeChange()">
-                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
-                                    <span class="text-2xl">🥡</span>
-                                    <p class="text-sm font-medium mt-1">Para Llevar</p>
-                                </div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="order-type" value="delivery" class="hidden peer" onchange="handleOrderTypeChange()">
-                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
-                                    <span class="text-2xl">🏠</span>
-                                    <p class="text-sm font-medium mt-1">Delivery</p>
-                                </div>
-                            </label>
-                        </div>
+                <!-- TIPO PEDIDO -->
 
-                        <!-- Mesa Number -->
-                        <div id="mesa-field" class="hidden">
-                            <label class="block text-sm font-medium mb-1">Número de Mesa</label>
-                            <select id="mesa-number" class="w-full bg-monkey-darker border border-monkey-secondary/30 rounded-lg px-4 py-2 focus:outline-none focus:border-monkey-primary transition-all">
-                                <option value="">Seleccione una mesa</option>
-                                <option value="1">Mesa 1</option>
-                                <option value="2">Mesa 2</option>
-                                <option value="3">Mesa 3</option>
-                                <option value="4">Mesa 4</option>
-                                <option value="5">Mesa 5</option>
-                                <option value="6">Mesa 6</option>
-                                <option value="7">Mesa 7</option>
-                                <option value="8">Mesa 8</option>
-                            </select>
-                        </div>
+                <div class="space-y-4">
 
-                        <!-- Delivery Address -->
-                        <div id="delivery-field" class="hidden">
-                            <label class="block text-sm font-medium mb-1">Dirección de Delivery</label>
-                            <textarea id="delivery-address" rows="2" class="w-full bg-monkey-darker border border-monkey-secondary/30 rounded-lg px-4 py-2 focus:outline-none focus:border-monkey-primary transition-all" placeholder="Dirección exacta de entrega..."></textarea>
-                        </div>
-                    </div>
+                    <h3 class="font-semibold text-monkey-primary">
+                        📍 Tipo de Pedido
+                    </h3>
 
-                    <!-- Payment Method -->
-                    <div class="space-y-4">
-                        <h3 class="font-semibold text-monkey-primary">💳 Método de Pago</h3>
-                        <div class="grid grid-cols-2 gap-2">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="payment-method" value="efectivo" class="hidden peer" onchange="handlePaymentMethodChange()">
-                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
-                                    <span class="text-2xl">💵</span>
-                                    <p class="text-sm font-medium mt-1">Efectivo</p>
-                                </div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="payment-method" value="pago-movil" class="hidden peer" onchange="handlePaymentMethodChange()">
-                                <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
-                                    <span class="text-2xl">📱</span>
-                                    <p class="text-sm font-medium mt-1">Pago Móvil</p>
-                                </div>
-                            </label>
-                        </div>
 
-                        <!-- Pago Móvil Info -->
-                        <div id="pago-movil-info" class="hidden bg-monkey-darker rounded-lg p-4 space-y-2">
-                            <div id="pago-movil-details">
-                                <!-- Payment details will be loaded here -->
+                    <div class="grid grid-cols-3 gap-2">
+
+
+                        <label class="cursor-pointer">
+
+                            <input
+                                type="radio"
+                                name="order-type"
+                                value="mesa"
+                                class="hidden peer"
+                                onchange="handleOrderTypeChange()"
+                            >
+
+                            <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
+
+                                <span class="text-2xl">
+                                    🪑
+                                </span>
+
+                                <p class="text-sm font-medium mt-1">
+                                    Mesa
+                                </p>
+
                             </div>
-                        </div>
+
+                        </label>
+
+
+                        <label class="cursor-pointer">
+
+                            <input
+                                type="radio"
+                                name="order-type"
+                                value="llevar"
+                                class="hidden peer"
+                                onchange="handleOrderTypeChange()"
+                            >
+
+                            <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
+
+                                <span class="text-2xl">
+                                    🥡
+                                </span>
+
+                                <p class="text-sm font-medium mt-1">
+                                    Para Llevar
+                                </p>
+
+                            </div>
+
+                        </label>
+
+
+                        <label class="cursor-pointer">
+
+                            <input
+                                type="radio"
+                                name="order-type"
+                                value="delivery"
+                                class="hidden peer"
+                                onchange="handleOrderTypeChange()"
+                            >
+
+                            <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
+
+                                <span class="text-2xl">
+                                    🏠
+                                </span>
+
+                                <p class="text-sm font-medium mt-1">
+                                    Delivery
+                                </p>
+
+                            </div>
+
+                        </label>
+
                     </div>
 
-                    <!-- Order Summary -->
-                    <div class="bg-monkey-darker rounded-lg p-4 space-y-2">
-                        <h3 class="font-semibold text-monkey-secondary">📝 Resumen del Pedido</h3>
-                        <div id="order-summary" class="space-y-1 text-sm">
-                            <!-- Order summary will be loaded here -->
-                        </div>
-                        <div class="border-t border-monkey-secondary/20 pt-2 mt-2 flex justify-between items-center">
-                            <span class="font-semibold">Total:</span>
-                            <span id="checkout-total" class="text-xl font-bold text-monkey-primary">$0.00</span>
-                        </div>
+
+                    <!-- MESA -->
+
+                    <div
+                        id="mesa-field"
+                        class="hidden"
+                    >
+
+                        <label class="block text-sm font-medium mb-1">
+                            Número de Mesa
+                        </label>
+
+                        <select
+                            id="mesa-number"
+                            class="w-full bg-monkey-darker border border-monkey-secondary/30 rounded-lg px-4 py-2 focus:outline-none focus:border-monkey-primary transition-all"
+                        >
+
+                            <option value="">
+                                Seleccione una mesa
+                            </option>
+
+                            <option value="1">
+                                Mesa 1
+                            </option>
+
+                            <option value="2">
+                                Mesa 2
+                            </option>
+
+                            <option value="3">
+                                Mesa 3
+                            </option>
+
+                            <option value="4">
+                                Mesa 4
+                            </option>
+
+                            <option value="5">
+                                Mesa 5
+                            </option>
+
+                            <option value="6">
+                                Mesa 6
+                            </option>
+
+                            <option value="7">
+                                Mesa 7
+                            </option>
+
+                            <option value="8">
+                                Mesa 8
+                            </option>
+
+                        </select>
+
                     </div>
 
-                    <!-- Submit Button -->
-                    <button type="submit" class="w-full bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker font-bold py-3 rounded-lg transition-all">
-                        🚀 Enviar Pedido
+
+                    <!-- DELIVERY -->
+
+                    <div
+                        id="delivery-field"
+                        class="hidden"
+                    >
+
+                        <label class="block text-sm font-medium mb-1">
+                            Dirección de Delivery
+                        </label>
+
+                        <textarea
+                            id="delivery-address"
+                            rows="2"
+                            class="w-full bg-monkey-darker border border-monkey-secondary/30 rounded-lg px-4 py-2 focus:outline-none focus:border-monkey-primary transition-all"
+                            placeholder="Dirección exacta de entrega..."
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+
+                <!-- PAGO -->
+
+                <div class="space-y-4">
+
+                    <h3 class="font-semibold text-monkey-primary">
+                        💳 Método de Pago
+                    </h3>
+
+
+                    <div class="grid grid-cols-2 gap-2">
+
+
+                        <label class="cursor-pointer">
+
+                            <input
+                                type="radio"
+                                name="payment-method"
+                                value="efectivo"
+                                class="hidden peer"
+                                onchange="handlePaymentMethodChange()"
+                            >
+
+                            <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
+
+                                <span class="text-2xl">
+                                    💵
+                                </span>
+
+                                <p class="text-sm font-medium mt-1">
+                                    Efectivo
+                                </p>
+
+                            </div>
+
+                        </label>
+
+
+                        <label class="cursor-pointer">
+
+                            <input
+                                type="radio"
+                                name="payment-method"
+                                value="pago-movil"
+                                class="hidden peer"
+                                onchange="handlePaymentMethodChange()"
+                            >
+
+                            <div class="peer-checked:bg-monkey-primary peer-checked:border-monkey-primary peer-checked:text-monkey-darker bg-monkey-darker border-2 border-monkey-secondary/30 rounded-lg p-3 text-center transition-all hover:border-monkey-primary/50">
+
+                                <span class="text-2xl">
+                                    📱
+                                </span>
+
+                                <p class="text-sm font-medium mt-1">
+                                    Pago Móvil
+                                </p>
+
+                            </div>
+
+                        </label>
+
+                    </div>
+
+
+                    <div
+                        id="pago-movil-info"
+                        class="hidden bg-monkey-darker rounded-lg p-4 space-y-2"
+                    >
+
+                        <div id="pago-movil-details"></div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- RESUMEN -->
+
+                <div
+                    class="bg-monkey-darker rounded-lg p-4 space-y-2"
+                >
+
+                    <h3 class="font-semibold text-monkey-secondary">
+                        📝 Resumen del Pedido
+                    </h3>
+
+                    <div
+                        id="order-summary"
+                        class="space-y-1 text-sm"
+                    >
+                    </div>
+
+                    <div
+                        class="border-t border-monkey-secondary/20 pt-2 mt-2 flex justify-between items-center"
+                    >
+
+                        <span class="font-semibold">
+                            Total:
+                        </span>
+
+                        <span
+                            id="checkout-total"
+                            class="text-xl font-bold text-monkey-primary"
+                        >
+                            $0.00
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    id="submit-order-btn"
+                    class="w-full bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker font-bold py-3 rounded-lg transition-all"
+                >
+                    🚀 Enviar Pedido
+                </button>
+
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     TOAST
+============================================================ -->
+
+<div
+    id="toast"
+    class="fixed bottom-4 left-4 right-4 bg-monkey-primary text-monkey-darker font-semibold px-4 py-3 rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all z-50"
+>
+
+    <span id="toast-message"></span>
+
+</div>
+
+
+<script>
+
+
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
+
+const SCRIPT_URL =
+    'https://script.google.com/macros/s/AKfycbwn6sL8PGtCtVJpVuBr0-EpWPCf7Zn1RVuNs4krV_kK3QboPyNeS0rT5pAO-5XWgmua/exec';
+
+
+const WHATSAPP_NUMBER =
+    '584262583547';
+
+
+// ============================================================
+// ESTADO
+// ============================================================
+
+let menuData = [];
+
+let paymentMethods = [];
+
+let cart = [];
+
+let categories = new Set();
+
+
+// ============================================================
+// INICIO
+// ============================================================
+
+document.addEventListener(
+    'DOMContentLoaded',
+    () => {
+
+        loadMenuData();
+
+    }
+);
+
+
+// ============================================================
+// CARGAR MENÚ
+// ============================================================
+
+async function loadMenuData() {
+
+    try {
+
+        console.log(
+            'Cargando menú desde Google Sheets...'
+        );
+
+
+        const response =
+            await fetch(
+                `${SCRIPT_URL}?action=getMenu`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            'Menú recibido:',
+            data
+        );
+
+
+        if (!data.success) {
+
+            throw new Error(
+                data.message ||
+                'Error al obtener menú'
+            );
+        }
+
+
+        // ----------------------------------------------------
+        // Actualizar menú
+        // ----------------------------------------------------
+
+        menuData =
+            data.menu.filter(
+                item => item.disponible === true
+            );
+
+
+        // ----------------------------------------------------
+        // Métodos de pago
+        // ----------------------------------------------------
+
+        paymentMethods =
+            data.paymentMethods.filter(
+                method => method.activo === true
+            );
+
+
+        // ----------------------------------------------------
+        // Categorías
+        // ----------------------------------------------------
+
+        categories.clear();
+
+
+        menuData.forEach(item => {
+
+            categories.add(
+                item.categoria
+            );
+
+        });
+
+
+        renderCategoryFilter();
+
+        renderMenu();
+
+        hideLoading();
+
+
+    } catch (error) {
+
+        console.error(
+            'Error loading menu:',
+            error
+        );
+
+
+        showToast(
+            'Error de conexión. Usando datos de prueba...'
+        );
+
+
+        loadDemoData();
+
+    }
+}
+
+
+// ============================================================
+// DATOS DEMO
+// ============================================================
+
+function loadDemoData() {
+
+    menuData = [
+
+        {
+            id: 1,
+            categoria: 'Hamburguesas',
+            nombre: 'Monkey Classic',
+            descripcion: 'Carne 150g, queso, lechuga, tomate',
+            precio_usd: 8.00,
+            disponible: true,
+            stock_actual: 20
+        },
+
+        {
+            id: 2,
+            categoria: 'Hamburguesas',
+            nombre: 'Monkey Bacon',
+            descripcion: 'Carne 150g, bacon, queso, cebolla caramelizada',
+            precio_usd: 10.00,
+            disponible: true,
+            stock_actual: 15
+        },
+
+        {
+            id: 3,
+            categoria: 'Hamburguesas',
+            nombre: 'Monkey Doble',
+            descripcion: 'Doble carne 150g, doble queso, vegetales',
+            precio_usd: 12.00,
+            disponible: true,
+            stock_actual: 10
+        },
+
+        {
+            id: 4,
+            categoria: 'Papas',
+            nombre: 'Papas Fritas',
+            descripcion: 'Papas crujientes con salsa',
+            precio_usd: 4.00,
+            disponible: true,
+            stock_actual: 50
+        },
+
+        {
+            id: 5,
+            categoria: 'Papas',
+            nombre: 'Papas con Queso',
+            descripcion: 'Papas con queso derretido y bacon',
+            precio_usd: 6.00,
+            disponible: true,
+            stock_actual: 30
+        },
+
+        {
+            id: 6,
+            categoria: 'Bebidas',
+            nombre: 'Refresco',
+            descripcion: 'Coca-Cola, Pepsi, Sprite',
+            precio_usd: 2.00,
+            disponible: true,
+            stock_actual: 100
+        },
+
+        {
+            id: 7,
+            categoria: 'Bebidas',
+            nombre: 'Jugo Natural',
+            descripcion: 'Naranja, limón, piña',
+            precio_usd: 3.00,
+            disponible: true,
+            stock_actual: 50
+        }
+
+    ];
+
+
+    paymentMethods = [
+
+        {
+            id: 1,
+            tipo: 'Pago Móvil',
+            banco: 'Banesco',
+            cedula_rif: 'V-12345678',
+            telefono: '0414-1234567',
+            titular: 'Monkey Burgers C.A.',
+            activo: true
+        }
+
+    ];
+
+
+    categories.clear();
+
+
+    menuData.forEach(item => {
+
+        categories.add(
+            item.categoria
+        );
+
+    });
+
+
+    renderCategoryFilter();
+
+    renderMenu();
+
+    hideLoading();
+
+}
+
+
+// ============================================================
+// CATEGORÍAS
+// ============================================================
+
+function renderCategoryFilter() {
+
+    const container =
+        document.getElementById(
+            'category-filter'
+        );
+
+
+    container.innerHTML = '';
+
+
+    const allBtn =
+        document.createElement('button');
+
+
+    allBtn.className =
+        'category-btn active bg-monkey-primary text-white px-4 py-2 rounded-full font-medium whitespace-nowrap transition-all';
+
+
+    allBtn.dataset.category =
+        'all';
+
+
+    allBtn.textContent =
+        'Todos';
+
+
+    allBtn.onclick =
+        () => filterByCategory('all');
+
+
+    container.appendChild(
+        allBtn
+    );
+
+
+    categories.forEach(
+        category => {
+
+            const btn =
+                document.createElement(
+                    'button'
+                );
+
+
+            btn.className =
+                'category-btn bg-monkey-darker border border-monkey-secondary/30 text-white px-4 py-2 rounded-full font-medium whitespace-nowrap transition-all hover:border-monkey-primary/50';
+
+
+            btn.textContent =
+                category;
+
+
+            btn.dataset.category =
+                category;
+
+
+            btn.onclick =
+                () => filterByCategory(category);
+
+
+            container.appendChild(
+                btn
+            );
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// FILTRO
+// ============================================================
+
+function filterByCategory(category) {
+
+    document
+        .querySelectorAll('.category-btn')
+        .forEach(btn => {
+
+            btn.classList.remove(
+                'bg-monkey-primary',
+                'text-white'
+            );
+
+            btn.classList.add(
+                'bg-monkey-darker',
+                'border',
+                'border-monkey-secondary/30'
+            );
+
+        });
+
+
+    const selected =
+        document.querySelector(
+            `[data-category="${CSS.escape(category)}"]`
+        );
+
+
+    if (selected) {
+
+        selected.classList.remove(
+            'bg-monkey-darker',
+            'border',
+            'border-monkey-secondary/30'
+        );
+
+        selected.classList.add(
+            'bg-monkey-primary',
+            'text-white'
+        );
+
+    }
+
+
+    const filtered =
+        category === 'all'
+
+            ? menuData
+
+            : menuData.filter(
+                item =>
+                    item.categoria === category
+            );
+
+
+    renderMenu(filtered);
+
+}
+
+
+// ============================================================
+// RENDER MENÚ
+// ============================================================
+
+function renderMenu(items = menuData) {
+
+    const container =
+        document.getElementById(
+            'menu-grid'
+        );
+
+
+    container.innerHTML = '';
+
+
+    items.forEach(item => {
+
+        const cartItem =
+            cart.find(
+                c => c.id === item.id
+            );
+
+
+        const quantity =
+            cartItem
+                ? cartItem.quantity
+                : 0;
+
+
+        const stockActual =
+            item.stock_actual !== undefined
+                ? Number(item.stock_actual)
+                : 999;
+
+
+        const isOutOfStock =
+            stockActual <= 0;
+
+
+        const isLowStock =
+            stockActual > 0 &&
+            stockActual <= 5;
+
+
+        const card =
+            document.createElement('div');
+
+
+        card.className =
+            `bg-monkey-dark rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all ${
+                isOutOfStock
+                    ? 'opacity-50'
+                    : ''
+            }`;
+
+
+        card.innerHTML = `
+
+            <div class="bg-monkey-secondary/20 h-40 flex items-center justify-center relative">
+
+                <span class="text-6xl">
+                    🍔
+                </span>
+
+                ${
+                    isOutOfStock
+                        ? `
+                            <div class="absolute inset-0 bg-black/70 flex items-center justify-center">
+
+                                <span class="text-white font-bold text-lg">
+                                    AGOTADO
+                                </span>
+
+                            </div>
+                        `
+                        : ''
+                }
+
+
+                ${
+                    isLowStock && !isOutOfStock
+                        ? `
+                            <div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                ¡POCO STOCK!
+                            </div>
+                        `
+                        : ''
+                }
+
+            </div>
+
+
+            <div class="p-4">
+
+                <span class="text-xs font-medium text-monkey-secondary bg-monkey-darker px-2 py-1 rounded-full">
+
+                    ${item.categoria}
+
+                </span>
+
+
+                <h3 class="font-bold text-lg mt-2">
+
+                    ${item.nombre}
+
+                </h3>
+
+
+                <p class="text-sm text-gray-400 mt-1">
+
+                    ${item.descripcion}
+
+                </p>
+
+
+                <div class="mt-2 text-xs ${
+                    isLowStock
+                        ? 'text-red-400'
+                        : 'text-green-400'
+                }">
+
+                    Stock:
+                    ${stockActual}
+
+                    ${
+                        stockActual === 1
+                            ? 'unidad'
+                            : 'unidades'
+                    }
+
+                </div>
+
+
+                <div class="flex items-center justify-between mt-4">
+
+                    <span class="text-xl font-bold text-monkey-primary">
+
+                        $${Number(item.precio_usd).toFixed(2)}
+
+                    </span>
+
+
+                    <div class="flex items-center gap-2">
+
+                        ${
+                            quantity > 0
+
+                                ? `
+
+                                    <button
+                                        onclick="updateQuantity(${item.id}, -1)"
+                                        class="w-8 h-8 bg-monkey-darker hover:bg-monkey-secondary/30 rounded-full font-bold transition-all"
+                                    >
+                                        -
+                                    </button>
+
+                                    <span class="w-8 text-center font-bold">
+                                        ${quantity}
+                                    </span>
+
+                                `
+
+                                : ''
+                        }
+
+
+                        <button
+                            onclick="updateQuantity(${item.id}, 1)"
+                            class="w-8 h-8 bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker rounded-full font-bold transition-all ${
+                                isOutOfStock
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : ''
+                            }"
+                            ${
+                                isOutOfStock
+                                    ? 'disabled'
+                                    : ''
+                            }
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        `;
+
+
+        container.appendChild(card);
+
+    });
+
+}
+
+
+// ============================================================
+// CARRITO
+// ============================================================
+
+function updateQuantity(id, change) {
+
+    const item =
+        menuData.find(
+            i => i.id === id
+        );
+
+
+    if (!item) {
+
+        showToast(
+            'Producto no encontrado'
+        );
+
+        return;
+    }
+
+
+    const cartItem =
+        cart.find(
+            c => c.id === id
+        );
+
+
+    const stockActual =
+        item.stock_actual !== undefined
+            ? Number(item.stock_actual)
+            : 999;
+
+
+    if (cartItem) {
+
+        const newQuantity =
+            cartItem.quantity + change;
+
+
+        if (
+            change > 0 &&
+            newQuantity > stockActual
+        ) {
+
+            showToast(
+                `Solo hay ${stockActual} ${
+                    stockActual === 1
+                        ? 'unidad'
+                        : 'unidades'
+                } disponibles de ${item.nombre}`
+            );
+
+            return;
+        }
+
+
+        cartItem.quantity =
+            newQuantity;
+
+
+        if (
+            cartItem.quantity <= 0
+        ) {
+
+            cart =
+                cart.filter(
+                    c => c.id !== id
+                );
+
+        }
+
+    } else if (change > 0) {
+
+        if (stockActual <= 0) {
+
+            showToast(
+                `${item.nombre} está agotado`
+            );
+
+            return;
+        }
+
+
+        cart.push({
+
+            ...item,
+
+            quantity: 1
+
+        });
+
+    }
+
+
+    updateCartUI();
+
+    renderMenu();
+
+}
+
+
+// ============================================================
+// ACTUALIZAR CARRITO
+// ============================================================
+
+function updateCartUI() {
+
+    const countEl =
+        document.getElementById(
+            'cart-count'
+        );
+
+
+    const totalEl =
+        document.getElementById(
+            'cart-total'
+        );
+
+
+    const checkoutBtn =
+        document.getElementById(
+            'checkout-btn'
+        );
+
+
+    const totalItems =
+        cart.reduce(
+            (sum, item) =>
+                sum + item.quantity,
+            0
+        );
+
+
+    const totalPrice =
+        cart.reduce(
+            (sum, item) =>
+                sum +
+                (
+                    Number(item.precio_usd) *
+                    item.quantity
+                ),
+            0
+        );
+
+
+    countEl.textContent =
+        totalItems;
+
+
+    totalEl.textContent =
+        `$${totalPrice.toFixed(2)}`;
+
+
+    checkoutBtn.disabled =
+        cart.length === 0;
+
+
+    const cartItemsEl =
+        document.getElementById(
+            'cart-items'
+        );
+
+
+    if (cart.length === 0) {
+
+        cartItemsEl.innerHTML =
+            '<p class="text-center text-gray-400">Tu carrito está vacío</p>';
+
+        return;
+    }
+
+
+    cartItemsEl.innerHTML =
+        cart.map(item => `
+
+            <div class="bg-monkey-darker rounded-lg p-3 flex items-center gap-3">
+
+                <span class="text-2xl">
+                    🍔
+                </span>
+
+
+                <div class="flex-1">
+
+                    <h4 class="font-semibold">
+                        ${item.nombre}
+                    </h4>
+
+                    <p class="text-sm text-monkey-primary">
+
+                        $${Number(item.precio_usd).toFixed(2)}
+                        x
+                        ${item.quantity}
+
+                    </p>
+
+                </div>
+
+
+                <div class="flex items-center gap-2">
+
+                    <button
+                        onclick="updateQuantity(${item.id}, -1)"
+                        class="w-7 h-7 bg-monkey-secondary/30 hover:bg-monkey-secondary/50 rounded-full font-bold transition-all"
+                    >
+                        -
                     </button>
-                </form>
-            </div>
-        </div>
-    </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-4 left-4 right-4 bg-monkey-primary text-monkey-darker font-semibold px-4 py-3 rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all z-50">
-        <span id="toast-message"></span>
-    </div>
 
-    <script>
-        // Configuration - Replace with your Google Apps Script URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwn6sL8PGtCtVJpVuBr0-EpWPCf7Zn1RVuNs4krV_kK3QboPyNeS0rT5pAO-5XWgmua/exec';
-        const WHATSAPP_NUMBER = '584262583547'; // Format: 584123456789
+                    <span class="w-6 text-center font-bold">
+                        ${item.quantity}
+                    </span>
 
-        // State
-        let menuData = [];
-        let paymentMethods = [];
-        let cart = [];
-        let categories = new Set();
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadMenuData();
-        });
+                    <button
+                        onclick="updateQuantity(${item.id}, 1)"
+                        class="w-7 h-7 bg-monkey-primary hover:bg-orange-600 rounded-full font-bold transition-all"
+                    >
+                        +
+                    </button>
 
-        // Load menu data from Google Sheets
-        async function loadMenuData() {
-            try {
-                const response = await fetch(`${SCRIPT_URL}?action=getMenu`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    menuData = data.menu.filter(item => item.disponible === true);
-                    paymentMethods = data.paymentMethods.filter(method => method.activo === true);
-                    
-                    // Extract categories
-                    menuData.forEach(item => categories.add(item.categoria));
-                    
-                    renderCategoryFilter();
-                    renderMenu();
-                    hideLoading();
-                } else {
-                    showToast('Error al cargar el menú');
-                    hideLoading();
-                }
-            } catch (error) {
-                console.error('Error loading menu:', error);
-                showToast('Error de conexión. Usando datos de prueba...');
-                // Load demo data for testing
-                loadDemoData();
-            }
-        }
-
-        // Demo data for testing
-        function loadDemoData() {
-            menuData = [
-                { id: 1, categoria: 'Hamburguesas', nombre: 'Monkey Classic', descripcion: 'Carne 150g, queso, lechuga, tomate', precio_usd: 8.00, disponible: true },
-                { id: 2, categoria: 'Hamburguesas', nombre: 'Monkey Bacon', descripcion: 'Carne 150g, bacon, queso, cebolla caramelizada', precio_usd: 10.00, disponible: true },
-                { id: 3, categoria: 'Hamburguesas', nombre: 'Monkey Doble', descripcion: 'Doble carne 150g, doble queso, vegetales', precio_usd: 12.00, disponible: true },
-                { id: 4, categoria: 'Papas', nombre: 'Papas Fritas', descripcion: 'Papas crujientes con salsa', precio_usd: 4.00, disponible: true },
-                { id: 5, categoria: 'Papas', nombre: 'Papas con Queso', descripcion: 'Papas con queso derretido y bacon', precio_usd: 6.00, disponible: true },
-                { id: 6, categoria: 'Bebidas', nombre: 'Refresco', descripcion: 'Coca-Cola, Pepsi, Sprite', precio_usd: 2.00, disponible: true },
-                { id: 7, categoria: 'Bebidas', nombre: 'Jugo Natural', descripcion: 'Naranja, limón, piña', precio_usd: 3.00, disponible: true },
-            ];
-            
-            paymentMethods = [
-                { id: 1, tipo: 'Pago Móvil', banco: 'Banesco', cedula_rif: 'V-12345678', telefono: '0414-1234567', titular: 'Monkey Burgers C.A.', activo: true }
-            ];
-            
-            menuData.forEach(item => categories.add(item.categoria));
-            
-            renderCategoryFilter();
-            renderMenu();
-            hideLoading();
-        }
-
-        // Render category filter
-        function renderCategoryFilter() {
-            const container = document.getElementById('category-filter');
-            const allBtn = container.querySelector('[data-category="all"]');
-            
-            // Clear existing category buttons (except "Todos")
-            container.innerHTML = '';
-            container.appendChild(allBtn);
-            
-            categories.forEach(category => {
-                const btn = document.createElement('button');
-                btn.className = 'category-btn bg-monkey-darker border border-monkey-secondary/30 text-white px-4 py-2 rounded-full font-medium whitespace-nowrap transition-all hover:border-monkey-primary/50';
-                btn.textContent = category;
-                btn.onclick = () => filterByCategory(category);
-                container.appendChild(btn);
-            });
-        }
-
-        // Filter by category
-        function filterByCategory(category) {
-            // Update button styles
-            document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.classList.remove('bg-monkey-primary', 'text-white');
-                btn.classList.add('bg-monkey-darker', 'border', 'border-monkey-secondary/30');
-            });
-            
-            event.target.classList.remove('bg-monkey-darker', 'border', 'border-monkey-secondary/30');
-            event.target.classList.add('bg-monkey-primary', 'text-white');
-            
-            // Filter menu
-            const filtered = category === 'all' 
-                ? menuData 
-                : menuData.filter(item => item.categoria === category);
-            
-            renderMenu(filtered);
-        }
-
-        // Render menu
-        function renderMenu(items = menuData) {
-            const container = document.getElementById('menu-grid');
-            container.innerHTML = '';
-            
-            items.forEach(item => {
-                const cartItem = cart.find(c => c.id === item.id);
-                const quantity = cartItem ? cartItem.quantity : 0;
-                
-                // Verificar stock (unidades directas)
-                const stockActual = item.stock_actual !== undefined ? item.stock_actual : 999;
-                const isOutOfStock = stockActual <= 0;
-                const isLowStock = stockActual > 0 && stockActual <= 5;
-                
-                const card = document.createElement('div');
-                card.className = `bg-monkey-dark rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all ${isOutOfStock ? 'opacity-50' : ''}`;
-                card.innerHTML = `
-                    <div class="bg-monkey-secondary/20 h-40 flex items-center justify-center relative">
-                        <span class="text-6xl">🍔</span>
-                        ${isOutOfStock ? '<div class="absolute inset-0 bg-black/70 flex items-center justify-center"><span class="text-white font-bold text-lg">AGOTADO</span></div>' : ''}
-                        ${isLowStock && !isOutOfStock ? '<div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">¡POCO STOCK!</div>' : ''}
-                    </div>
-                    <div class="p-4">
-                        <span class="text-xs font-medium text-monkey-secondary bg-monkey-darker px-2 py-1 rounded-full">${item.categoria}</span>
-                        <h3 class="font-bold text-lg mt-2">${item.nombre}</h3>
-                        <p class="text-sm text-gray-400 mt-1">${item.descripcion}</p>
-                        ${stockActual !== undefined && stockActual !== 999 ? `
-                            <div class="mt-2 text-xs ${isLowStock ? 'text-red-400' : 'text-green-400'}">
-                                Stock: ${stockActual} ${stockActual === 1 ? 'unidad' : 'unidades'}
-                            </div>
-                        ` : ''}
-                        <div class="flex items-center justify-between mt-4">
-                            <span class="text-xl font-bold text-monkey-primary">$${item.precio_usd.toFixed(2)}</span>
-                            <div class="flex items-center gap-2">
-                                ${quantity > 0 ? `
-                                    <button onclick="updateQuantity(${item.id}, -1)" class="w-8 h-8 bg-monkey-darker hover:bg-monkey-secondary/30 rounded-full font-bold transition-all">-</button>
-                                    <span class="w-8 text-center font-bold">${quantity}</span>
-                                ` : ''}
-                                <button onclick="updateQuantity(${item.id}, 1)" class="w-8 h-8 bg-monkey-primary hover:bg-monkey-secondary text-monkey-darker rounded-full font-bold transition-all ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''}" ${isOutOfStock ? 'disabled' : ''}>+</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // Update cart quantity
-        function updateQuantity(id, change) {
-            const item = menuData.find(i => i.id === id);
-            const cartItem = cart.find(c => c.id === id);
-            
-            // Verificar stock máximo disponible (unidades directas)
-            const stockActual = item.stock_actual !== undefined ? item.stock_actual : 999;
-            
-            if (cartItem) {
-                const newQuantity = cartItem.quantity + change;
-                
-                // Validar que no exceda el stock máximo
-                if (change > 0 && newQuantity > stockActual) {
-                    showToast(`Solo hay ${stockActual} ${stockActual === 1 ? 'unidad' : 'unidades'} disponibles de ${item.nombre}`);
-                    return;
-                }
-                
-                cartItem.quantity = newQuantity;
-                if (cartItem.quantity <= 0) {
-                    cart = cart.filter(c => c.id !== id);
-                }
-            } else if (change > 0) {
-                // Validar stock antes de agregar
-                if (stockActual <= 0) {
-                    showToast(`${item.nombre} está agotado`);
-                    return;
-                }
-                cart.push({ ...item, quantity: 1 });
-            }
-            
-            updateCartUI();
-            renderMenu();
-        }
-
-        // Update cart UI
-        function updateCartUI() {
-            const countEl = document.getElementById('cart-count');
-            const totalEl = document.getElementById('cart-total');
-            const checkoutBtn = document.getElementById('checkout-btn');
-            
-            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            const totalPrice = cart.reduce((sum, item) => sum + (item.precio_usd * item.quantity), 0);
-            
-            countEl.textContent = totalItems;
-            totalEl.textContent = `$${totalPrice.toFixed(2)}`;
-            checkoutBtn.disabled = cart.length === 0;
-            
-            // Render cart items
-            const cartItemsEl = document.getElementById('cart-items');
-            if (cart.length === 0) {
-                cartItemsEl.innerHTML = '<p class="text-center text-gray-400">Tu carrito está vacío</p>';
-            } else {
-                cartItemsEl.innerHTML = cart.map(item => `
-                    <div class="bg-monkey-darker rounded-lg p-3 flex items-center gap-3">
-                        <span class="text-2xl">🍔</span>
-                        <div class="flex-1">
-                            <h4 class="font-semibold">${item.nombre}</h4>
-                            <p class="text-sm text-monkey-primary">$${item.precio_usd.toFixed(2)} x ${item.quantity}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="updateQuantity(${item.id}, -1)" class="w-7 h-7 bg-monkey-secondary/30 hover:bg-monkey-secondary/50 rounded-full font-bold transition-all">-</button>
-                            <span class="w-6 text-center font-bold">${item.quantity}</span>
-                            <button onclick="updateQuantity(${item.id}, 1)" class="w-7 h-7 bg-monkey-primary hover:bg-orange-600 rounded-full font-bold transition-all">+</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-        }
-
-        // Cart modal functions
-        function openCart() {
-            document.getElementById('cart-modal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeCart() {
-            document.getElementById('cart-modal').classList.add('hidden');
-            document.body.style.overflow = '';
-        }
-
-        // Checkout modal functions
-        function openCheckout() {
-            closeCart();
-            document.getElementById('checkout-modal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            renderOrderSummary();
-        }
-
-        function closeCheckout() {
-            document.getElementById('checkout-modal').classList.add('hidden');
-            document.body.style.overflow = '';
-        }
-
-        // Handle order type change
-        function handleOrderTypeChange() {
-            const orderType = document.querySelector('input[name="order-type"]:checked')?.value;
-            const mesaField = document.getElementById('mesa-field');
-            const deliveryField = document.getElementById('delivery-field');
-            
-            mesaField.classList.add('hidden');
-            deliveryField.classList.add('hidden');
-            
-            if (orderType === 'mesa') {
-                mesaField.classList.remove('hidden');
-            } else if (orderType === 'delivery') {
-                deliveryField.classList.remove('hidden');
-            }
-        }
-
-        // Handle payment method change
-        function handlePaymentMethodChange() {
-            const paymentMethod = document.querySelector('input[name="payment-method"]:checked')?.value;
-            const pagoMovilInfo = document.getElementById('pago-movil-info');
-            
-            if (paymentMethod === 'pago-movil') {
-                pagoMovilInfo.classList.remove('hidden');
-                renderPagoMovilInfo();
-            } else {
-                pagoMovilInfo.classList.add('hidden');
-            }
-        }
-
-        // Render Pago Móvil info
-        function renderPagoMovilInfo() {
-            const container = document.getElementById('pago-movil-details');
-            
-            if (paymentMethods.length > 0) {
-                const method = paymentMethods[0];
-                container.innerHTML = `
-                    <div class="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                            <span class="text-gray-400">Banco:</span>
-                            <p class="font-semibold">${method.banco}</p>
-                        </div>
-                        <div>
-                            <span class="text-gray-400">Cédula/RIF:</span>
-                            <p class="font-semibold">${method.cedula_rif}</p>
-                        </div>
-                        <div>
-                            <span class="text-gray-400">Teléfono:</span>
-                            <p class="font-semibold">${method.telefono}</p>
-                        </div>
-                        <div>
-                            <span class="text-gray-400">Titular:</span>
-                            <p class="font-semibold">${method.titular}</p>
-                        </div>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = '<p class="text-gray-400">No hay métodos de pago disponibles</p>';
-            }
-        }
-
-        // Render order summary
-        function renderOrderSummary() {
-            const container = document.getElementById('order-summary');
-            const totalEl = document.getElementById('checkout-total');
-            
-            container.innerHTML = cart.map(item => `
-                <div class="flex justify-between">
-                    <span>${item.quantity}x ${item.nombre}</span>
-                    <span>$${(item.precio_usd * item.quantity).toFixed(2)}</span>
                 </div>
-            `).join('');
-            
-            const total = cart.reduce((sum, item) => sum + (item.precio_usd * item.quantity), 0);
-            totalEl.textContent = `$${total.toFixed(2)}`;
-        }
 
-        // Handle form submission
-        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+            </div>
+
+        `).join('');
+
+}
+
+
+// ============================================================
+// CART MODAL
+// ============================================================
+
+function openCart() {
+
+    document
+        .getElementById('cart-modal')
+        .classList.remove('hidden');
+
+
+    document.body.style.overflow =
+        'hidden';
+
+}
+
+
+function closeCart() {
+
+    document
+        .getElementById('cart-modal')
+        .classList.add('hidden');
+
+
+    document.body.style.overflow =
+        '';
+
+}
+
+
+// ============================================================
+// CHECKOUT
+// ============================================================
+
+function openCheckout() {
+
+    closeCart();
+
+
+    document
+        .getElementById('checkout-modal')
+        .classList.remove('hidden');
+
+
+    document.body.style.overflow =
+        'hidden';
+
+
+    renderOrderSummary();
+
+}
+
+
+function closeCheckout() {
+
+    document
+        .getElementById('checkout-modal')
+        .classList.add('hidden');
+
+
+    document.body.style.overflow =
+        '';
+
+}
+
+
+// ============================================================
+// TIPO PEDIDO
+// ============================================================
+
+function handleOrderTypeChange() {
+
+    const orderType =
+        document.querySelector(
+            'input[name="order-type"]:checked'
+        )?.value;
+
+
+    const mesaField =
+        document.getElementById(
+            'mesa-field'
+        );
+
+
+    const deliveryField =
+        document.getElementById(
+            'delivery-field'
+        );
+
+
+    mesaField.classList.add(
+        'hidden'
+    );
+
+
+    deliveryField.classList.add(
+        'hidden'
+    );
+
+
+    if (orderType === 'mesa') {
+
+        mesaField.classList.remove(
+            'hidden'
+        );
+
+    }
+
+
+    if (orderType === 'delivery') {
+
+        deliveryField.classList.remove(
+            'hidden'
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// MÉTODO PAGO
+// ============================================================
+
+function handlePaymentMethodChange() {
+
+    const paymentMethod =
+        document.querySelector(
+            'input[name="payment-method"]:checked'
+        )?.value;
+
+
+    const pagoMovilInfo =
+        document.getElementById(
+            'pago-movil-info'
+        );
+
+
+    if (
+        paymentMethod ===
+        'pago-movil'
+    ) {
+
+        pagoMovilInfo.classList.remove(
+            'hidden'
+        );
+
+        renderPagoMovilInfo();
+
+    } else {
+
+        pagoMovilInfo.classList.add(
+            'hidden'
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// INFO PAGO MOVIL
+// ============================================================
+
+function renderPagoMovilInfo() {
+
+    const container =
+        document.getElementById(
+            'pago-movil-details'
+        );
+
+
+    if (
+        paymentMethods.length > 0
+    ) {
+
+        const method =
+            paymentMethods[0];
+
+
+        container.innerHTML = `
+
+            <div class="grid grid-cols-2 gap-2 text-sm">
+
+                <div>
+
+                    <span class="text-gray-400">
+                        Banco:
+                    </span>
+
+                    <p class="font-semibold">
+                        ${method.banco}
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <span class="text-gray-400">
+                        Cédula/RIF:
+                    </span>
+
+                    <p class="font-semibold">
+                        ${method.cedula_rif}
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <span class="text-gray-400">
+                        Teléfono:
+                    </span>
+
+                    <p class="font-semibold">
+                        ${method.telefono}
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <span class="text-gray-400">
+                        Titular:
+                    </span>
+
+                    <p class="font-semibold">
+                        ${method.titular}
+                    </p>
+
+                </div>
+
+            </div>
+
+        `;
+
+    } else {
+
+        container.innerHTML =
+            '<p class="text-gray-400">No hay métodos de pago disponibles</p>';
+
+    }
+
+}
+
+
+// ============================================================
+// RESUMEN PEDIDO
+// ============================================================
+
+function renderOrderSummary() {
+
+    const container =
+        document.getElementById(
+            'order-summary'
+        );
+
+
+    const totalEl =
+        document.getElementById(
+            'checkout-total'
+        );
+
+
+    container.innerHTML =
+        cart.map(item => `
+
+            <div class="flex justify-between">
+
+                <span>
+                    ${item.quantity}x
+                    ${item.nombre}
+                </span>
+
+                <span>
+                    $${(
+                        Number(item.precio_usd) *
+                        item.quantity
+                    ).toFixed(2)}
+                </span>
+
+            </div>
+
+        `).join('');
+
+
+    const total =
+        cart.reduce(
+            (sum, item) =>
+                sum +
+                (
+                    Number(item.precio_usd) *
+                    item.quantity
+                ),
+            0
+        );
+
+
+    totalEl.textContent =
+        `$${total.toFixed(2)}`;
+
+}
+
+
+// ============================================================
+// ENVIAR PEDIDO
+// ============================================================
+
+document
+    .getElementById('checkout-form')
+    .addEventListener(
+        'submit',
+        async (e) => {
+
             e.preventDefault();
-            
-            // Validate form
-            const orderType = document.querySelector('input[name="order-type"]:checked')?.value;
-            const paymentMethod = document.querySelector('input[name="payment-method"]:checked')?.value;
-            
+
+
+            const submitBtn =
+                document.getElementById(
+                    'submit-order-btn'
+                );
+
+
+            // ------------------------------------------------
+            // VALIDAR
+            // ------------------------------------------------
+
+            const orderType =
+                document.querySelector(
+                    'input[name="order-type"]:checked'
+                )?.value;
+
+
+            const paymentMethod =
+                document.querySelector(
+                    'input[name="payment-method"]:checked'
+                )?.value;
+
+
             if (!orderType) {
-                showToast('Por favor selecciona el tipo de pedido');
+
+                showToast(
+                    'Por favor selecciona el tipo de pedido'
+                );
+
                 return;
             }
-            
+
+
             if (!paymentMethod) {
-                showToast('Por favor selecciona el método de pago');
+
+                showToast(
+                    'Por favor selecciona el método de pago'
+                );
+
                 return;
             }
-            
-            if (orderType === 'mesa' && !document.getElementById('mesa-number').value) {
-                showToast('Por favor selecciona el número de mesa');
+
+
+            if (
+                orderType === 'mesa' &&
+                !document.getElementById(
+                    'mesa-number'
+                ).value
+            ) {
+
+                showToast(
+                    'Por favor selecciona el número de mesa'
+                );
+
                 return;
             }
-            
-            if (orderType === 'delivery' && !document.getElementById('delivery-address').value.trim()) {
-                showToast('Por favor ingresa la dirección de delivery');
+
+
+            if (
+                orderType === 'delivery' &&
+                !document.getElementById(
+                    'delivery-address'
+                ).value.trim()
+            ) {
+
+                showToast(
+                    'Por favor ingresa la dirección de delivery'
+                );
+
                 return;
             }
-            
-            // Prepare order data
+
+
+            if (cart.length === 0) {
+
+                showToast(
+                    'El carrito está vacío'
+                );
+
+                return;
+            }
+
+
+            // ------------------------------------------------
+            // PREPARAR PEDIDO
+            // ------------------------------------------------
+
             const orderData = {
-                cliente: document.getElementById('customer-name').value,
-                telefono: document.getElementById('customer-phone').value,
-                tipo_pedido: orderType,
-                mesa: orderType === 'mesa' ? document.getElementById('mesa-number').value : '',
-                direccion: orderType === 'delivery' ? document.getElementById('delivery-address').value : '',
-                metodo_pago: paymentMethod,
-                items: cart.map(item => ({
-                    id: item.id,
-                    nombre: item.nombre,
-                    cantidad: item.quantity,
-                    precio: item.precio_usd
-                })),
-                total: cart.reduce((sum, item) => sum + (item.precio_usd * item.quantity), 0)
+
+                cliente:
+                    document.getElementById(
+                        'customer-name'
+                    ).value.trim(),
+
+
+                telefono:
+                    document.getElementById(
+                        'customer-phone'
+                    ).value.trim(),
+
+
+                tipo_pedido:
+                    orderType,
+
+
+                mesa:
+                    orderType === 'mesa'
+
+                        ? document.getElementById(
+                            'mesa-number'
+                        ).value
+
+                        : '',
+
+
+                direccion:
+                    orderType === 'delivery'
+
+                        ? document.getElementById(
+                            'delivery-address'
+                        ).value.trim()
+
+                        : '',
+
+
+                metodo_pago:
+                    paymentMethod,
+
+
+                items:
+                    cart.map(item => ({
+
+                        id: item.id,
+
+                        nombre: item.nombre,
+
+                        cantidad: Number(
+                            item.quantity
+                        ),
+
+                        precio: Number(
+                            item.precio_usd
+                        )
+
+                    })),
+
+
+                total:
+                    cart.reduce(
+                        (sum, item) =>
+                            sum +
+                            (
+                                Number(item.precio_usd) *
+                                Number(item.quantity)
+                            ),
+                        0
+                    )
+
             };
-            
-            // Send order to Google Apps Script
+
+
+            console.log(
+                '================================'
+            );
+
+            console.log(
+                'ENVIANDO PEDIDO'
+            );
+
+            console.log(
+                orderData
+            );
+
+            console.log(
+                '================================'
+            );
+
+
+            // ------------------------------------------------
+            // DESACTIVAR BOTÓN
+            // Evita doble click
+            // ------------------------------------------------
+
+            submitBtn.disabled =
+                true;
+
+            submitBtn.textContent =
+                '⏳ Enviando pedido...';
+
+
             try {
-                console.log('Enviando pedido a:', SCRIPT_URL);
-                console.log('Datos del pedido:', orderData);
-                
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(orderData)
-                });
-                
-                console.log('Respuesta recibida (no-cors mode)');
-                
-                // Redirect to WhatsApp
-                sendToWhatsApp(orderData);
-                
-                // Clear cart and close modals
+
+                // ============================================
+                // IMPORTANTE
+                //
+                // text/plain permite una petición simple
+                // evitando el problema del preflight CORS.
+                // ============================================
+
+                await fetch(
+                    SCRIPT_URL,
+                    {
+
+                        method: 'POST',
+
+                        mode: 'no-cors',
+
+                        headers: {
+
+                            'Content-Type':
+                                'text/plain;charset=utf-8'
+
+                        },
+
+                        body:
+                            JSON.stringify(
+                                orderData
+                            )
+
+                    }
+                );
+
+
+                console.log(
+                    'Pedido enviado a Apps Script'
+                );
+
+
+                // ------------------------------------------------
+                // IMPORTANTE
+                //
+                // Como Google Apps Script se está llamando con
+                // no-cors, el navegador no permite leer la respuesta.
+                //
+                // Por eso esperamos un momento y recargamos el menú.
+                // ------------------------------------------------
+
+                await new Promise(
+                    resolve =>
+                        setTimeout(
+                            resolve,
+                            1200
+                        )
+                );
+
+
+                // ------------------------------------------------
+                // RECARGAR STOCK
+                // ------------------------------------------------
+
+                await loadMenuData();
+
+
+                // ------------------------------------------------
+                // WHATSAPP
+                // ------------------------------------------------
+
+                sendToWhatsApp(
+                    orderData
+                );
+
+
+                // ------------------------------------------------
+                // LIMPIAR
+                // ------------------------------------------------
+
                 cart = [];
+
+
                 updateCartUI();
+
+
                 closeCheckout();
+
+
                 renderMenu();
-                
-                showToast('¡Pedido enviado con éxito!');
+
+
+                showToast(
+                    '¡Pedido enviado con éxito!'
+                );
+
+
             } catch (error) {
-                console.error('Error sending order:', error);
-                // Even if the API fails, redirect to WhatsApp
-                sendToWhatsApp(orderData);
-                cart = [];
-                updateCartUI();
-                closeCheckout();
-                renderMenu();
-                showToast('Pedido enviado (modo offline)');
+
+                console.error(
+                    'Error enviando pedido:',
+                    error
+                );
+
+
+                showToast(
+                    'No se pudo enviar el pedido. Intenta nuevamente.'
+                );
+
+
+            } finally {
+
+                submitBtn.disabled =
+                    false;
+
+
+                submitBtn.textContent =
+                    '🚀 Enviar Pedido';
+
             }
-        });
 
-        // Send to WhatsApp
-        function sendToWhatsApp(order) {
-            const itemsText = order.items.map(item => 
-                `- ${item.cantidad}x ${item.nombre} ($${(item.precio * item.cantidad).toFixed(2)})`
-            ).join('\n');
-            
-            const tipoUbicacion = order.tipo_pedido === 'mesa' 
-                ? `Mesa ${order.mesa}` 
-                : order.tipo_pedido === 'delivery' 
-                    ? `Delivery: ${order.direccion}` 
-                    : 'Para Llevar';
-            
-            const message = `🍔 ¡Hola Monkey Burgers! Tengo un nuevo pedido:
+        }
+    );
+
+
+// ============================================================
+// WHATSAPP
+// ============================================================
+
+function sendToWhatsApp(order) {
+
+    const itemsText =
+        order.items
+            .map(item =>
+
+                `- ${item.cantidad}x ${item.nombre} ($${(
+                    Number(item.precio) *
+                    Number(item.cantidad)
+                ).toFixed(2)})`
+
+            )
+            .join('\n');
+
+
+    const tipoUbicacion =
+
+        order.tipo_pedido === 'mesa'
+
+            ? `Mesa ${order.mesa}`
+
+            : order.tipo_pedido === 'delivery'
+
+                ? `Delivery: ${order.direccion}`
+
+                : 'Para Llevar';
+
+
+    const message = `🍔 ¡Hola Monkey Burgers! Tengo un nuevo pedido:
+
 👤 Cliente: ${order.cliente}
+
 📞 Teléfono: ${order.telefono}
+
 📍 Tipo: ${tipoUbicacion}
-💳 Método de Pago: ${order.metodo_pago === 'pago-movil' ? 'Pago Móvil' : 'Efectivo'}
+
+💳 Método de Pago: ${
+        order.metodo_pago === 'pago-movil'
+            ? 'Pago Móvil'
+            : 'Efectivo'
+    }
+
 📝 Detalle:
+
 ${itemsText}
-💰 Total: $${order.total.toFixed(2)}
+
+💰 Total: $${Number(order.total).toFixed(2)}
+
 ¡Quedo a la espera de su confirmación!`;
-            
-            const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-        }
 
-        // Hide loading screen
-        function hideLoading() {
-            document.getElementById('loading-screen').classList.add('hidden');
-        }
 
-        // Show toast notification
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toast-message');
-            
-            toastMessage.textContent = message;
-            toast.classList.remove('translate-y-full', 'opacity-0');
-            
-            setTimeout(() => {
-                toast.classList.add('translate-y-full', 'opacity-0');
-            }, 3000);
-        }
-    </script>
+    const whatsappUrl =
+        `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
-    <!-- Footer -->
-    <footer class="bg-monkey-dark border-t border-monkey-secondary/30 py-6 mt-auto">
-        <div class="container mx-auto px-4 text-center">
-            <p class="text-monkey-primary font-semibold text-lg mb-2">🍔 ¡Disfruta cada bocado! 🍔</p>
-            <p class="text-gray-400 text-sm">La mejor hamburguesa, hecha con amor y dedicación para ti.</p>
-            <p class="text-gray-500 text-xs mt-4">© 2024 Monkey Burgers. Todos los derechos reservados.</p>
-        </div>
-    </footer>
+
+    window.open(
+        whatsappUrl,
+        '_blank'
+    );
+
+}
+
+
+// ============================================================
+// LOADING
+// ============================================================
+
+function hideLoading() {
+
+    document
+        .getElementById(
+            'loading-screen'
+        )
+        .classList.add(
+            'hidden'
+        );
+
+}
+
+
+// ============================================================
+// TOAST
+// ============================================================
+
+function showToast(message) {
+
+    const toast =
+        document.getElementById(
+            'toast'
+        );
+
+
+    const toastMessage =
+        document.getElementById(
+            'toast-message'
+        );
+
+
+    toastMessage.textContent =
+        message;
+
+
+    toast.classList.remove(
+        'translate-y-full',
+        'opacity-0'
+    );
+
+
+    setTimeout(
+        () => {
+
+            toast.classList.add(
+                'translate-y-full',
+                'opacity-0'
+            );
+
+        },
+        3000
+    );
+
+}
+
+
+</script>
+
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+
+<footer
+    class="bg-monkey-dark border-t border-monkey-secondary/30 py-6 mt-auto"
+>
+
+    <div class="container mx-auto px-4 text-center">
+
+        <p
+            class="text-monkey-primary font-semibold text-lg mb-2"
+        >
+            🍔 ¡Disfruta cada bocado! 🍔
+        </p>
+
+        <p class="text-gray-400 text-sm">
+
+            La mejor hamburguesa, hecha con amor y dedicación
+            para ti.
+
+        </p>
+
+        <p class="text-gray-500 text-xs mt-4">
+
+            © 2024 Monkey Burgers.
+            Todos los derechos reservados.
+
+        </p>
+
+    </div>
+
+</footer>
+
+
 </body>
+
 </html>

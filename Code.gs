@@ -1,42 +1,85 @@
-// Google Apps Script para Monkey Burgers
-// Este script maneja la API para el menú y los pedidos
+// ============================================================
+// GOOGLE APPS SCRIPT - MONKEY BURGERS
+// API para menú, pedidos y control de stock
+// ============================================================
 
-/**
- * doGet - Maneja las solicitudes GET para obtener datos del menú y métodos de pago
- * @param {Object} e - Event object con parámetros de la solicitud
- * @return {ContentService.TextOutput} - Respuesta JSON
- */
+
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
+
+const MENU_SHEET_NAME = 'Menu';
+const ORDERS_SHEET_NAME = 'Pedidos';
+const PAYMENT_SHEET_NAME = 'MetodosPago';
+
+
+// ============================================================
+// GET - OBTENER MENÚ Y MÉTODOS DE PAGO
+// ============================================================
+
 function doGet(e) {
-  // Manejar caso cuando e es undefined (ejecución manual desde editor)
-  if (!e || !e.parameter) {
-    return createJsonOutput({
-      success: false,
-      message: 'Esta función debe ser llamada como Web App. Usa ?action=getMenu en la URL.'
-    });
-  }
-  
-  const action = e.parameter.action;
-  
-  if (action === 'getMenu') {
-    return getMenu();
-  } else {
+  try {
+
+    if (!e || !e.parameter) {
+      return createJsonOutput({
+        success: false,
+        message: 'Esta función debe ser llamada como Web App. Usa ?action=getMenu'
+      });
+    }
+
+    const action = e.parameter.action;
+
+    if (action === 'getMenu') {
+      return getMenu();
+    }
+
     return createJsonOutput({
       success: false,
       message: 'Acción no válida. Usa ?action=getMenu'
     });
+
+  } catch (error) {
+
+    Logger.log('Error en doGet: ' + error.toString());
+
+    return createJsonOutput({
+      success: false,
+      message: 'Error en GET: ' + error.toString()
+    });
   }
 }
 
-/**
- * doPost - Maneja las solicitudes POST para recibir nuevos pedidos
- * @param {Object} e - Event object con datos del POST
- * @return {ContentService.TextOutput} - Respuesta JSON
- */
+
+// ============================================================
+// POST - RECIBIR PEDIDO
+// ============================================================
+
 function doPost(e) {
   try {
-    const postData = JSON.parse(e.postData.contents);
-    return saveOrder(postData);
+
+    Logger.log('========== NUEVO PEDIDO ==========');
+
+    if (!e || !e.postData || !e.postData.contents) {
+      return createJsonOutput({
+        success: false,
+        message: 'No se recibió información del pedido'
+      });
+    }
+
+    Logger.log('Contenido recibido:');
+    Logger.log(e.postData.contents);
+
+    const orderData = JSON.parse(e.postData.contents);
+
+    Logger.log('Pedido parseado:');
+    Logger.log(JSON.stringify(orderData));
+
+    return saveOrder(orderData);
+
   } catch (error) {
+
+    Logger.log('ERROR en doPost: ' + error.toString());
+
     return createJsonOutput({
       success: false,
       message: 'Error al procesar el pedido: ' + error.toString()
@@ -44,322 +87,1117 @@ function doPost(e) {
   }
 }
 
-/**
- * getMenu - Obtiene los datos del menú y métodos de pago
- * @return {ContentService.TextOutput} - JSON con menu y paymentMethods
- */
+
+// ============================================================
+// OBTENER MENÚ
+// ============================================================
+
 function getMenu() {
+
   try {
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    
-    // Obtener datos de la pestaña Menu
-    const menuSheet = ss.getSheetByName('Menu');
+
+    // ----------------------------
+    // Menú
+    // ----------------------------
+
+    const menuSheet = ss.getSheetByName(MENU_SHEET_NAME);
+
+    if (!menuSheet) {
+      throw new Error('No existe la hoja "' + MENU_SHEET_NAME + '"');
+    }
+
     const menuData = getSheetData(menuSheet);
-    
-    // Obtener datos de la pestaña MetodosPago
-    const paymentSheet = ss.getSheetByName('MetodosPago');
-    const paymentData = getSheetData(paymentSheet);
-    
+
+
+    // ----------------------------
+    // Métodos de pago
+    // ----------------------------
+
+    const paymentSheet = ss.getSheetByName(PAYMENT_SHEET_NAME);
+
+    let paymentData = [];
+
+    if (paymentSheet) {
+      paymentData = getSheetData(paymentSheet);
+    }
+
+
+    // ----------------------------
+    // Respuesta
+    // ----------------------------
+
     return createJsonOutput({
+
       success: true,
+
       menu: menuData,
+
       paymentMethods: paymentData
+
     });
+
   } catch (error) {
+
+    Logger.log('Error en getMenu: ' + error.toString());
+
     return createJsonOutput({
+
       success: false,
+
       message: 'Error al obtener el menú: ' + error.toString()
+
     });
   }
 }
 
-/**
- * saveOrder - Guarda un nuevo pedido en la pestaña Pedidos y actualiza stock
- * @param {Object} orderData - Datos del pedido
- * @return {ContentService.TextOutput} - Respuesta JSON
- */
+
+// ============================================================
+// GUARDAR PEDIDO
+// ============================================================
+
 function saveOrder(orderData) {
+
+  // ----------------------------------------------------------
+  // BLOQUEO
+  // Evita que dos pedidos modifiquen el stock al mismo tiempo
+  // ----------------------------------------------------------
+
+  const lock = LockService.getScriptLock();
+
   try {
+
+    // Esperar máximo 30 segundos
+    lock.waitLock(30000);
+
+    Logger.log('Lock obtenido correctamente');
+
+
+    // --------------------------------------------------------
+    // VALIDAR DATOS DEL PEDIDO
+    // --------------------------------------------------------
+
+    if (!orderData) {
+      throw new Error('El pedido está vacío');
+    }
+
+    if (!Array.isArray(orderData.items)) {
+      throw new Error('El pedido no contiene items válidos');
+    }
+
+    if (orderData.items.length === 0) {
+      throw new Error('El pedido no contiene productos');
+    }
+
+
+    // --------------------------------------------------------
+    // OBTENER HOJAS
+    // --------------------------------------------------------
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const ordersSheet = ss.getSheetByName('Pedidos');
-    const menuSheet = ss.getSheetByName('Menu');
-    
-    // Verificar y actualizar stock antes de guardar el pedido
-    const stockUpdateResult = updateStock(menuSheet, orderData.items);
+
+    const ordersSheet = ss.getSheetByName(ORDERS_SHEET_NAME);
+    const menuSheet = ss.getSheetByName(MENU_SHEET_NAME);
+
+    if (!ordersSheet) {
+      throw new Error('No existe la hoja "' + ORDERS_SHEET_NAME + '"');
+    }
+
+    if (!menuSheet) {
+      throw new Error('No existe la hoja "' + MENU_SHEET_NAME + '"');
+    }
+
+
+    // --------------------------------------------------------
+    // ACTUALIZAR STOCK
+    // --------------------------------------------------------
+
+    Logger.log('Iniciando actualización de stock...');
+
+    const stockUpdateResult = updateStock(
+      menuSheet,
+      orderData.items
+    );
+
+
+    // Si el stock no se pudo actualizar,
+    // NO guardar el pedido.
+
     if (!stockUpdateResult.success) {
+
+      Logger.log(
+        'Pedido rechazado por stock: ' +
+        stockUpdateResult.message
+      );
+
       return createJsonOutput({
+
         success: false,
-        message: stockUpdateResult.message
+
+        message: stockUpdateResult.message,
+
+        stockUpdated: []
+
       });
     }
-    
-    // Formatear items del pedido como texto
-    const itemsText = orderData.items.map(item => 
-      `${item.cantidad}x ${item.nombre} ($${(item.precio * item.cantidad).toFixed(2)})`
-    ).join(', ');
-    
-    // Obtener fecha y hora actual
+
+
+    // --------------------------------------------------------
+    // FORMATEAR ITEMS DEL PEDIDO
+    // --------------------------------------------------------
+
+    const itemsText = orderData.items
+      .map(item => {
+
+        const cantidad = Number(item.cantidad) || 0;
+
+        const precio = Number(item.precio) || 0;
+
+        const subtotal = precio * cantidad;
+
+        return (
+          cantidad +
+          'x ' +
+          item.nombre +
+          ' ($' +
+          subtotal.toFixed(2) +
+          ')'
+        );
+
+      })
+      .join(', ');
+
+
+    // --------------------------------------------------------
+    // FECHA / HORA
+    // --------------------------------------------------------
+
     const timestamp = new Date();
-    
-    // Determinar ubicación según el tipo de pedido
-    let ubicacion = orderData.tipo_pedido;
+
+
+    // --------------------------------------------------------
+    // UBICACIÓN
+    // --------------------------------------------------------
+
+    let ubicacion = orderData.tipo_pedido || '';
+
     if (orderData.tipo_pedido === 'mesa') {
-      ubicacion = 'Mesa ' + orderData.mesa;
+
+      ubicacion =
+        'Mesa ' +
+        (orderData.mesa || '');
+
     } else if (orderData.tipo_pedido === 'delivery') {
-      ubicacion = 'Delivery: ' + orderData.direccion;
+
+      ubicacion =
+        'Delivery: ' +
+        (orderData.direccion || '');
+
+    } else if (orderData.tipo_pedido === 'llevar') {
+
+      ubicacion = 'Para Llevar';
     }
-    
-    // Formatear método de pago
-    const metodoPago = orderData.metodo_pago === 'pago-movil' ? 'Pago Móvil' : 'Efectivo';
-    
-    // Crear nueva fila con los datos del pedido
+
+
+    // --------------------------------------------------------
+    // MÉTODO DE PAGO
+    // --------------------------------------------------------
+
+    let metodoPago = orderData.metodo_pago || '';
+
+    if (orderData.metodo_pago === 'pago-movil') {
+
+      metodoPago = 'Pago Móvil';
+
+    } else if (orderData.metodo_pago === 'efectivo') {
+
+      metodoPago = 'Efectivo';
+    }
+
+
+    // --------------------------------------------------------
+    // TOTAL
+    // --------------------------------------------------------
+
+    const total =
+      Number(orderData.total) || 0;
+
+
+    // --------------------------------------------------------
+    // CREAR FILA DEL PEDIDO
+    // --------------------------------------------------------
+
     const newRow = [
+
       timestamp,
-      orderData.cliente,
-      orderData.telefono,
+
+      orderData.cliente || '',
+
+      orderData.telefono || '',
+
       ubicacion,
+
       orderData.direccion || '',
+
       itemsText,
-      orderData.total,
+
+      total,
+
       metodoPago,
+
       'Pendiente'
+
     ];
-    
-    // Agregar la fila a la hoja
+
+
+    // --------------------------------------------------------
+    // GUARDAR PEDIDO
+    // --------------------------------------------------------
+
     ordersSheet.appendRow(newRow);
-    
+
+    // Forzar escritura inmediata
+    SpreadsheetApp.flush();
+
+
+    Logger.log('Pedido guardado correctamente');
+
+    Logger.log(
+      'Stock actualizado: ' +
+      JSON.stringify(stockUpdateResult.updatedItems)
+    );
+
+
+    // --------------------------------------------------------
+    // RESPUESTA
+    // --------------------------------------------------------
+
     return createJsonOutput({
+
       success: true,
+
       message: 'Pedido guardado exitosamente',
+
       stockUpdated: stockUpdateResult.updatedItems
+
     });
+
+
   } catch (error) {
+
+    Logger.log(
+      'ERROR en saveOrder: ' +
+      error.toString()
+    );
+
     return createJsonOutput({
+
       success: false,
-      message: 'Error al guardar el pedido: ' + error.toString()
+
+      message:
+        'Error al guardar el pedido: ' +
+        error.toString(),
+
+      stockUpdated: []
+
     });
+
+  } finally {
+
+    // --------------------------------------------------------
+    // LIBERAR LOCK
+    // --------------------------------------------------------
+
+    try {
+
+      lock.releaseLock();
+
+      Logger.log('Lock liberado');
+
+    } catch (lockError) {
+
+      Logger.log(
+        'Error liberando lock: ' +
+        lockError.toString()
+      );
+    }
   }
 }
 
-/**
- * updateStock - Actualiza el stock de unidades después de un pedido
- * @param {Sheet} menuSheet - Hoja de menú
- * @param {Array} items - Items del pedido
- * @return {Object} - Resultado de la actualización
- */
+
+// ============================================================
+// ACTUALIZAR STOCK
+// ============================================================
+
 function updateStock(menuSheet, items) {
+
   try {
-    Logger.log('Iniciando updateStock...');
-    const data = menuSheet.getDataRange().getValues();
-    const headers = data[0];
-    const rows = data.slice(1);
-    
-    Logger.log('Headers: ' + headers.join(', '));
-    
-    // Encontrar índices de columnas
-    const idIndex = headers.indexOf('id');
-    const stockIndex = headers.indexOf('stock_actual');
-    
-    Logger.log('idIndex: ' + idIndex + ', stockIndex: ' + stockIndex);
-    
-    // Si la columna de stock no existe, omitir control de stock
-    if (stockIndex === -1) {
-      Logger.log('Columna stock_actual no encontrada');
+
+    Logger.log('========== UPDATE STOCK ==========');
+
+
+    // --------------------------------------------------------
+    // LEER DATOS DE LA HOJA
+    // --------------------------------------------------------
+
+    const data =
+      menuSheet.getDataRange().getValues();
+
+    if (data.length < 2) {
+
       return {
-        success: true,
-        updatedItems: [],
-        message: 'Columna de stock no configurada, pedido guardado sin control de stock'
+
+        success: false,
+
+        message: 'La hoja Menu no contiene productos',
+
+        updatedItems: []
+
       };
     }
-    
-    const updatedItems = [];
-    
-    // Actualizar stock para cada item
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      Logger.log('Procesando item: ' + JSON.stringify(item));
-      
-      // FIX 1: Comparar convirtiendo ambos valores a String para evitar descalces entre Number y String
-      const rowIndex = rows.findIndex(row => String(row[idIndex]) === String(item.id));
-      Logger.log('rowIndex encontrado: ' + rowIndex);
-      
-      if (rowIndex !== -1) {
-        // FIX 2: Convertir explícitamente a número para garantizar cálculos correctos
-        const currentStock = Number(rows[rowIndex][stockIndex]) || 0;
-        const quantityNeeded = Number(item.cantidad) || 0;
-        
-        Logger.log('Stock actual: ' + currentStock + ', Cantidad necesaria: ' + quantityNeeded);
-        
-        if (currentStock < quantityNeeded) {
-          Logger.log('Stock insuficiente');
-          return {
-            success: false,
-            message: `Stock insuficiente para ${item.nombre}. Disponible: ${currentStock}, Necesario: ${quantityNeeded}`
-          };
-        }
-        
-        // Actualizar stock en la hoja
-        const newStock = currentStock - quantityNeeded;
-        Logger.log('Actualizando stock de ' + currentStock + ' a ' + newStock);
-        
-        // +2 porque data.slice(1) descarta headers (1) y las filas en Sheets son Base-1 (+1)
-        menuSheet.getRange(rowIndex + 2, stockIndex + 1).setValue(newStock);
-        Logger.log('Stock actualizado en la hoja');
-        
-        // Actualizar la matriz local en memoria para evitar incongruencias si el mismo item viene duplicado en el array
-        rows[rowIndex][stockIndex] = newStock;
 
-        updatedItems.push({
-          id: item.id,
-          nombre: item.nombre,
-          oldStock: currentStock,
-          newStock: newStock,
-          quantityUsed: quantityNeeded
-        });
-      } else {
-        Logger.log('No se encontró fila para item id: ' + item.id);
-      }
+
+    const headers = data[0];
+
+    const rows = data.slice(1);
+
+
+    // --------------------------------------------------------
+    // BUSCAR COLUMNAS
+    // --------------------------------------------------------
+
+    const idIndex =
+      headers.indexOf('id');
+
+    const stockIndex =
+      headers.indexOf('stock_actual');
+
+
+    Logger.log(
+      'idIndex = ' +
+      idIndex +
+      ', stockIndex = ' +
+      stockIndex
+    );
+
+
+    // --------------------------------------------------------
+    // VALIDAR COLUMNAS
+    // --------------------------------------------------------
+
+    if (idIndex === -1) {
+
+      return {
+
+        success: false,
+
+        message:
+          'No existe la columna "id" en la hoja Menu',
+
+        updatedItems: []
+
+      };
     }
-    
-    Logger.log('updateStock completado exitosamente. Items actualizados: ' + updatedItems.length);
+
+
+    if (stockIndex === -1) {
+
+      return {
+
+        success: false,
+
+        message:
+          'No existe la columna "stock_actual" en la hoja Menu',
+
+        updatedItems: []
+
+      };
+    }
+
+
+    // ========================================================
+    // PASO 1
+    // VALIDAR TODO EL PEDIDO ANTES DE DESCONTAR
+    // ========================================================
+
+    const itemsToUpdate = [];
+
+
+    for (let i = 0; i < items.length; i++) {
+
+      const item = items[i];
+
+
+      Logger.log(
+        'Procesando item: ' +
+        JSON.stringify(item)
+      );
+
+
+      // ------------------------------------------------------
+      // VALIDAR ID
+      // ------------------------------------------------------
+
+      if (
+        item.id === undefined ||
+        item.id === null ||
+        item.id === ''
+      ) {
+
+        return {
+
+          success: false,
+
+          message:
+            'El producto "' +
+            (item.nombre || 'sin nombre') +
+            '" no tiene un ID válido',
+
+          updatedItems: []
+
+        };
+      }
+
+
+      // ------------------------------------------------------
+      // VALIDAR CANTIDAD
+      // ------------------------------------------------------
+
+      const quantityNeeded =
+        Number(item.cantidad);
+
+
+      if (
+        !Number.isFinite(quantityNeeded) ||
+        quantityNeeded <= 0
+      ) {
+
+        return {
+
+          success: false,
+
+          message:
+            'Cantidad inválida para "' +
+            (item.nombre || 'producto') +
+            '": ' +
+            item.cantidad,
+
+          updatedItems: []
+
+        };
+      }
+
+
+      // ------------------------------------------------------
+      // BUSCAR PRODUCTO
+      // ------------------------------------------------------
+
+      const rowIndex =
+        rows.findIndex(row =>
+
+          String(row[idIndex]).trim() ===
+          String(item.id).trim()
+
+        );
+
+
+      Logger.log(
+        'ID buscado: ' +
+        item.id +
+        ' | rowIndex: ' +
+        rowIndex
+      );
+
+
+      // ------------------------------------------------------
+      // PRODUCTO NO ENCONTRADO
+      // ------------------------------------------------------
+
+      if (rowIndex === -1) {
+
+        return {
+
+          success: false,
+
+          message:
+            'No se encontró el producto "' +
+            (item.nombre || '') +
+            '" con ID "' +
+            item.id +
+            '" en la hoja Menu',
+
+          updatedItems: []
+
+        };
+      }
+
+
+      // ------------------------------------------------------
+      // STOCK ACTUAL
+      // ------------------------------------------------------
+
+      const currentStock =
+        Number(rows[rowIndex][stockIndex]) || 0;
+
+
+      Logger.log(
+        'Producto: ' +
+        item.nombre +
+        ' | Stock: ' +
+        currentStock +
+        ' | Necesario: ' +
+        quantityNeeded
+      );
+
+
+      // ------------------------------------------------------
+      // VALIDAR STOCK
+      // ------------------------------------------------------
+
+      if (currentStock < quantityNeeded) {
+
+        return {
+
+          success: false,
+
+          message:
+            'Stock insuficiente para "' +
+            item.nombre +
+            '". Disponible: ' +
+            currentStock +
+            ', Necesario: ' +
+            quantityNeeded,
+
+          updatedItems: []
+
+        };
+      }
+
+
+      // ------------------------------------------------------
+      // CALCULAR NUEVO STOCK
+      // ------------------------------------------------------
+
+      const newStock =
+        currentStock - quantityNeeded;
+
+
+      itemsToUpdate.push({
+
+        rowIndex: rowIndex,
+
+        sheetRow:
+          rowIndex + 2,
+
+        id: item.id,
+
+        nombre: item.nombre,
+
+        oldStock: currentStock,
+
+        newStock: newStock,
+
+        quantityUsed: quantityNeeded
+
+      });
+
+    }
+
+
+    // ========================================================
+    // PASO 2
+    // AHORA SÍ MODIFICAR STOCK
+    // ========================================================
+
+    const updatedItems = [];
+
+
+    itemsToUpdate.forEach(update => {
+
+      const range =
+        menuSheet.getRange(
+          update.sheetRow,
+          stockIndex + 1
+        );
+
+
+      range.setValue(
+        update.newStock
+      );
+
+
+      Logger.log(
+        'Stock actualizado: ' +
+        update.nombre +
+        ' | ' +
+        update.oldStock +
+        ' -> ' +
+        update.newStock
+      );
+
+
+      // ------------------------------------------------------
+      // Si llega a 0, marcar disponible = false
+      // SOLO si existe la columna disponible.
+      // ------------------------------------------------------
+
+      const disponibleIndex =
+        headers.indexOf('disponible');
+
+
+      if (
+        disponibleIndex !== -1 &&
+        update.newStock <= 0
+      ) {
+
+        menuSheet
+          .getRange(
+            update.sheetRow,
+            disponibleIndex + 1
+          )
+          .setValue(false);
+
+      }
+
+
+      // ------------------------------------------------------
+      // Resultado
+      // ------------------------------------------------------
+
+      updatedItems.push({
+
+        id: update.id,
+
+        nombre: update.nombre,
+
+        oldStock: update.oldStock,
+
+        newStock: update.newStock,
+
+        quantityUsed: update.quantityUsed
+
+      });
+
+    });
+
+
+    // --------------------------------------------------------
+    // FORZAR ESCRITURA
+    // --------------------------------------------------------
+
+    SpreadsheetApp.flush();
+
+
+    Logger.log(
+      'Stock actualizado correctamente.'
+    );
+
+
     return {
+
       success: true,
+
       updatedItems: updatedItems
+
     };
+
+
   } catch (error) {
-    Logger.log('Error en updateStock: ' + error.toString());
+
+    Logger.log(
+      'ERROR en updateStock: ' +
+      error.toString()
+    );
+
+
     return {
+
       success: false,
-      message: 'Error al actualizar stock: ' + error.toString()
+
+      message:
+        'Error al actualizar stock: ' +
+        error.toString(),
+
+      updatedItems: []
+
     };
   }
 }
 
-/**
- * getSheetData - Obtiene los datos de una hoja como array de objetos
- * @param {Sheet} sheet - Hoja de Google Sheets
- * @return {Array} - Array de objetos con los datos
- */
+
+// ============================================================
+// CONVERTIR HOJA A ARRAY DE OBJETOS
+// ============================================================
+
 function getSheetData(sheet) {
-  const data = sheet.getDataRange().getValues();
+
+  const data =
+    sheet.getDataRange().getValues();
+
+
+  if (data.length === 0) {
+
+    return [];
+  }
+
+
   const headers = data[0];
+
   const rows = data.slice(1);
-  
+
+
   return rows.map(row => {
+
     const obj = {};
+
+
     headers.forEach((header, index) => {
-      // Convertir nombres de columnas a formato camelCase
-      const key = header.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_');
+
+      const key =
+        String(header)
+          .toLowerCase()
+          .replace(/[^a-zA-Z0-9]/g, '_');
+
+
       obj[key] = row[index];
+
     });
+
+
     return obj;
+
   });
 }
 
-/**
- * createJsonOutput - Crea una respuesta JSON con headers CORS
- * @param {Object} data - Datos a retornar
- * @return {ContentService.TextOutput} - Respuesta JSON
- */
+
+// ============================================================
+// CREAR RESPUESTA JSON
+// ============================================================
+
 function createJsonOutput(data) {
-  const output = ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-  
-  return output;
+
+  return ContentService
+
+    .createTextOutput(
+      JSON.stringify(data)
+    )
+
+    .setMimeType(
+      ContentService.MimeType.JSON
+    );
 }
 
-/**
- * setupSheets - Configura las hojas si no existen (función auxiliar)
- * Ejecutar esta función una vez para crear la estructura inicial
- */
+
+// ============================================================
+// CONFIGURAR HOJAS
+// ============================================================
+
 function setupSheets() {
+
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    Logger.log('Obteniendo spreadsheet...');
-    
-    // Crear pestaña Menu si no existe
+
+    const ss =
+      SpreadsheetApp.getActiveSpreadsheet();
+
+
     createMenuSheet(ss);
-    
-    // Crear pestaña MetodosPago si no existe
+
     createPaymentSheet(ss);
-    
-    // Crear pestaña Pedidos si no existe
+
     createOrdersSheet(ss);
-    
-    Logger.log('Configuración completada exitosamente');
+
+
+    Logger.log(
+      'Configuración completada exitosamente'
+    );
+
+
     return 'Configuración completada';
+
+
   } catch (error) {
-    Logger.log('Error en setupSheets: ' + error.toString());
+
+    Logger.log(
+      'Error en setupSheets: ' +
+      error.toString()
+    );
+
     throw error;
   }
 }
 
-/**
- * createMenuSheet - Crea la hoja de menú si no existe
- */
+
+// ============================================================
+// CREAR HOJA MENU
+// ============================================================
+
 function createMenuSheet(ss) {
-  let menuSheet = ss.getSheetByName('Menu');
+
+  let menuSheet =
+    ss.getSheetByName(MENU_SHEET_NAME);
+
+
   if (!menuSheet) {
-    Logger.log('Creando hoja Menu...');
-    menuSheet = ss.insertSheet('Menu');
-    
-    // Headers con columna de stock (simplificado)
-    const headers = [['id', 'categoria', 'nombre', 'descripcion', 'precio_usd', 'disponible', 'stock_actual']];
-    menuSheet.getRange(1, 1, 1, 7).setValues(headers);
-    
-    // Datos de ejemplo en una sola operación
+
+    menuSheet =
+      ss.insertSheet(MENU_SHEET_NAME);
+
+
+    const headers = [[
+
+      'id',
+
+      'categoria',
+
+      'nombre',
+
+      'descripcion',
+
+      'precio_usd',
+
+      'disponible',
+
+      'stock_actual'
+
+    ]];
+
+
+    menuSheet
+      .getRange(1, 1, 1, 7)
+      .setValues(headers);
+
+
     const data = [
-      [1, 'Hamburguesas', 'Monkey Classic', 'Carne 150g, queso, lechuga, tomate', 8.00, true, 20],
-      [2, 'Hamburguesas', 'Monkey Bacon', 'Carne 150g, bacon, queso, cebolla caramelizada', 10.00, true, 15],
-      [3, 'Hamburguesas', 'Monkey Doble', 'Doble carne 150g, doble queso, vegetales', 12.00, true, 10],
-      [4, 'Papas', 'Papas Fritas', 'Papas crujientes con salsa', 4.00, true, 50],
-      [5, 'Papas', 'Papas con Queso', 'Papas con queso derretido y bacon', 6.00, true, 30],
-      [6, 'Bebidas', 'Refresco', 'Coca-Cola, Pepsi, Sprite', 2.00, true, 100],
-      [7, 'Bebidas', 'Jugo Natural', 'Naranja, limón, piña', 3.00, true, 50]
+
+      [
+        1,
+        'Hamburguesas',
+        'Monkey Classic',
+        'Carne 150g, queso, lechuga, tomate',
+        8.00,
+        true,
+        20
+      ],
+
+      [
+        2,
+        'Hamburguesas',
+        'Monkey Bacon',
+        'Carne 150g, bacon, queso, cebolla caramelizada',
+        10.00,
+        true,
+        15
+      ],
+
+      [
+        3,
+        'Hamburguesas',
+        'Monkey Doble',
+        'Doble carne 150g, doble queso, vegetales',
+        12.00,
+        true,
+        10
+      ],
+
+      [
+        4,
+        'Papas',
+        'Papas Fritas',
+        'Papas crujientes con salsa',
+        4.00,
+        true,
+        50
+      ],
+
+      [
+        5,
+        'Papas',
+        'Papas con Queso',
+        'Papas con queso derretido y bacon',
+        6.00,
+        true,
+        30
+      ],
+
+      [
+        6,
+        'Bebidas',
+        'Refresco',
+        'Coca-Cola, Pepsi, Sprite',
+        2.00,
+        true,
+        100
+      ],
+
+      [
+        7,
+        'Bebidas',
+        'Jugo Natural',
+        'Naranja, limón, piña',
+        3.00,
+        true,
+        50
+      ]
+
     ];
-    menuSheet.getRange(2, 1, data.length, 7).setValues(data);
-    Logger.log('Hoja Menu creada con columna de stock');
+
+
+    menuSheet
+      .getRange(
+        2,
+        1,
+        data.length,
+        7
+      )
+      .setValues(data);
+
+
+    Logger.log(
+      'Hoja Menu creada'
+    );
+
+
   } else {
-    Logger.log('Hoja Menu ya existe');
+
+    Logger.log(
+      'Hoja Menu ya existe'
+    );
   }
 }
 
-/**
- * createPaymentSheet - Crea la hoja de métodos de pago si no existe
- */
+
+// ============================================================
+// CREAR HOJA METODOS PAGO
+// ============================================================
+
 function createPaymentSheet(ss) {
-  let paymentSheet = ss.getSheetByName('MetodosPago');
+
+  let paymentSheet =
+    ss.getSheetByName(PAYMENT_SHEET_NAME);
+
+
   if (!paymentSheet) {
-    Logger.log('Creando hoja MetodosPago...');
-    paymentSheet = ss.insertSheet('MetodosPago');
-    
-    // Headers
-    const headers = [['id', 'tipo', 'banco', 'cedula_rif', 'telefono', 'titular', 'activo']];
-    paymentSheet.getRange(1, 1, 1, 7).setValues(headers);
-    
-    // Datos de ejemplo
-    const data = [[1, 'Pago Móvil', 'Banesco', 'V-12345678', '0414-1234567', 'Monkey Burgers C.A.', true]];
-    paymentSheet.getRange(2, 1, 1, 7).setValues(data);
-    Logger.log('Hoja MetodosPago creada');
+
+    paymentSheet =
+      ss.insertSheet(PAYMENT_SHEET_NAME);
+
+
+    const headers = [[
+
+      'id',
+
+      'tipo',
+
+      'banco',
+
+      'cedula_rif',
+
+      'telefono',
+
+      'titular',
+
+      'activo'
+
+    ]];
+
+
+    paymentSheet
+      .getRange(1, 1, 1, 7)
+      .setValues(headers);
+
+
+    const data = [[
+
+      1,
+
+      'Pago Móvil',
+
+      'Banesco',
+
+      'V-12345678',
+
+      '0414-1234567',
+
+      'Monkey Burgers C.A.',
+
+      true
+
+    ]];
+
+
+    paymentSheet
+      .getRange(2, 1, 1, 7)
+      .setValues(data);
+
+
+    Logger.log(
+      'Hoja MetodosPago creada'
+    );
+
+
   } else {
-    Logger.log('Hoja MetodosPago ya existe');
+
+    Logger.log(
+      'Hoja MetodosPago ya existe'
+    );
   }
 }
 
-/**
- * createOrdersSheet - Crea la hoja de pedidos si no existe
- */
+
+// ============================================================
+// CREAR HOJA PEDIDOS
+// ============================================================
+
 function createOrdersSheet(ss) {
-  let ordersSheet = ss.getSheetByName('Pedidos');
+
+  let ordersSheet =
+    ss.getSheetByName(ORDERS_SHEET_NAME);
+
+
   if (!ordersSheet) {
-    Logger.log('Creando hoja Pedidos...');
-    ordersSheet = ss.insertSheet('Pedidos');
-    
-    // Headers
-    const headers = [['FechaHora', 'Cliente', 'Telefono', 'TipoUbicacion', 'DireccionDelivery', 'DetallePedido', 'MontoTotal', 'MetodoPago', 'Estado']];
-    ordersSheet.getRange(1, 1, 1, 9).setValues(headers);
-    Logger.log('Hoja Pedidos creada');
+
+    ordersSheet =
+      ss.insertSheet(ORDERS_SHEET_NAME);
+
+
+    const headers = [[
+
+      'FechaHora',
+
+      'Cliente',
+
+      'Telefono',
+
+      'TipoUbicacion',
+
+      'DireccionDelivery',
+
+      'DetallePedido',
+
+      'MontoTotal',
+
+      'MetodoPago',
+
+      'Estado'
+
+    ]];
+
+
+    ordersSheet
+      .getRange(1, 1, 1, 9)
+      .setValues(headers);
+
+
+    Logger.log(
+      'Hoja Pedidos creada'
+    );
+
+
   } else {
-    Logger.log('Hoja Pedidos ya existe');
+
+    Logger.log(
+      'Hoja Pedidos ya existe'
+    );
   }
 }
