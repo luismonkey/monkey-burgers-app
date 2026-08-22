@@ -2055,37 +2055,32 @@ document
 
 
                 // ------------------------------------------------
-                // IMPORTANTE
-                //
-                // Como Google Apps Script se está llamando con
-                // no-cors, el navegador no permite leer la respuesta.
-                //
-                // Por eso esperamos un momento y recargamos el menú.
-                // ------------------------------------------------
-
-                await new Promise(
-                    resolve =>
-                        setTimeout(
-                            resolve,
-                            1200
-                        )
-                );
-
-
-                // ------------------------------------------------
-                // RECARGAR STOCK
-                // ------------------------------------------------
-
-                await loadMenuData();
-
-
-                // ------------------------------------------------
                 // WHATSAPP
+                // Abrir siempre, independientemente de si loadMenuData falla
                 // ------------------------------------------------
 
                 sendToWhatsApp(
                     orderData
                 );
+
+
+                // ------------------------------------------------
+                // RECARGAR STOCK
+                // No bloquear si falla
+                // ------------------------------------------------
+
+                try {
+                    await new Promise(
+                        resolve =>
+                            setTimeout(
+                                resolve,
+                                500
+                            )
+                    );
+                    await loadMenuData();
+                } catch (e) {
+                    console.error('Error recargando menú:', e);
+                }
 
 
                 // ------------------------------------------------
