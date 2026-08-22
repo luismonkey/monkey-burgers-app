@@ -2164,7 +2164,8 @@ ${itemsText}
 ¡Quedo a la espera de su confirmación!`;
 
 
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    // Usar api.whatsapp.com para abrir app nativa en móvil
+    return `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
 }
 
 
